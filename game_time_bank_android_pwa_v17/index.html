@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#4b7bec">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="style.css">
+<title>ゲーム時間BANK</title>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div>
+      <div class="eyebrow">GAME TIME BANK</div>
+      <h1>🎮 まもるのゲーム時間BANK</h1>
+      <div id="todayLabel" class="date"></div>
+    </div>
+    <button class="icon-btn" id="settingsBtn" aria-label="設定">⚙️</button>
+  </header>
+
+  <main>
+    <section class="balance-card">
+      <div class="balance-title">あと <span id="remainMessage">ゲームできるよ！</span></div>
+      <div class="balance" id="balance">0<span>分</span></div>
+      <div class="balance-sub">今日GET <b id="todayEarned">0分</b> ・ 今日使用 <b id="todayUsed">0分</b></div>
+    </section>
+
+    <section class="card achievement-card">
+      <div class="achievement-main">🌟 今日 <strong id="studyTotal">0</strong> 分 勉強した！</div>
+      <div class="progress"><div id="studyProgress"></div></div>
+      <div class="progress-caption"><span id="taskDoneCount">0</span> / <span id="taskTotalCount">0</span> 項目クリア</div>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <h2>① クエストをしてGET！</h2>
+        <button class="small-btn" id="resetTodayBtn">今日をリセット</button>
+      </div>
+      <p class="hint">終わったクエストをタッチすると、✓とGET演出が出ます。</p>
+      <div id="taskList" class="task-list"></div>
+    </section>
+
+    <section class="card game-card">
+      <div class="section-head">
+        <h2>② 🎮 ゲーム時間</h2>
+        <span class="status-pill" id="timerStatus">待機中</span>
+      </div>
+      <div class="countdown-label">残りゲーム時間</div>
+      <div class="timer" id="timer">00:00</div>
+      <div class="timer-note" id="timerNote">「ゲーム開始」を押すとカウントダウンします</div>
+      <div class="timer-actions">
+        <button class="big-btn primary" id="startBtn">▶ ゲーム開始</button>
+        <button class="big-btn danger" id="finishBtn" disabled>■ ゲーム終了</button>
+      </div>
+      <div class="quick-use">
+        <div class="quick-title">ペナルティ（マイナスポイント）</div>
+        <div class="quick-grid">
+          <button data-min="5">−5分</button>
+          <button data-min="10">−10分</button>
+          <button data-min="15">−15分</button>
+          <button data-min="20">−20分</button>
+          <button data-min="30">−30分</button>
+          <button data-min="60">−60分</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-head">
+        <h2>③ 今日のゲーム記録</h2>
+        <button class="small-btn" id="clearLogsBtn">記録を削除</button>
+      </div>
+      <div id="logs" class="logs"></div>
+    </section>
+
+    <section class="card week-card">
+      <div class="section-head">
+        <h2>④ ⭐ 1週間のがんばり</h2>
+        <span class="week-total" id="weekTotal">0分</span>
+      </div>
+      <p class="hint">クエストをした時間が棒グラフになります。</p>
+      <div id="weekChart" class="week-chart"></div>
+      <div class="star-row" id="starRow"></div>
+    </section>
+
+    <section class="card summary-card">
+      <h2>🏦 ゲームBANK</h2>
+      <div class="summary-row"><span>昨日までの残り</span><b id="carry">0分</b></div>
+      <div class="summary-row"><span>今日GET</span><b id="sumEarn">＋0分</b></div>
+      <div class="summary-row"><span>今日使用</span><b id="sumUse">−0分</b></div>
+      <div class="summary-total"><span>現在の残高</span><strong id="summaryBalance">0分</strong></div>
+    </section>
+
+    <section class="card install-card" id="installCard">
+      <h2>📱 タブレットにアプリとして置く</h2>
+      <p id="installText">AndroidのChromeで開いた場合、「ホーム画面に追加」からアプリのように登録できます。</p>
+      <button class="big-btn primary" id="installBtn" hidden>＋ ホーム画面に追加</button>
+    </section>
+  </main>
+  <footer>データはこのタブレット内に保存されます。</footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal" id="settingsModal" aria-hidden="true">
+  <div class="modal-box">
+    <div class="modal-head"><h2>⚙️ 保護者設定</h2><button id="closeSettings" class="icon-btn">✕</button></div>
+    
+    <p class="hint">クエスト名・種類・獲得時間を変更できます。☰を上下にスワイプして並び順を変更できます。</p>
+    <div id="settingsTasks"></div>
+    <button class="big-btn primary" id="addTaskBtn" style="margin-bottom: 20px;">＋ クエストを追加</button>
+
+    <div class="category-manager">
+      <h3>🏷️ 種類の編集</h3>
+      <p class="hint">種類名とアイコンを変更できます。アイコンをタッチして変更、✕で削除できます。</p>
+      <div id="categorySettings"></div>
+      <button class="big-btn" id="addCategoryBtn" style="margin-top:10px; background:#fff; border:2px solid #e2e8f0; color:#3d4e67;">＋ 種類を追加</button>
+    </div>
+
+    <div class="report-section">
+      <h3>📊 月間レポート</h3>
+      <p class="hint">月ごとのクエストクリア時間（種類別）を確認できます。</p>
+      <div id="monthlyReport"></div>
+    </div>
+
+    <div class="password-section">
+      <h3>🔒 パスワード設定</h3>
+      <p class="hint">この設定画面を開くためのパスワードを変更できます。</p>
+      <div class="password-row">
+        <input type="text" id="parentPassword" placeholder="新しいパスワード（例：1234）">
+        <button class="big-btn primary" id="savePasswordBtn" style="width:auto; padding:0 20px;">変更</button>
+      </div>
+    </div>
+    
+    <div class="settings-actions">
+      <button class="big-btn" id="saveSettings">保存して閉じる</button>
+      <button class="big-btn danger" id="factoryReset">全データ初期化</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+let deferredInstallPrompt=null;
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredInstallPrompt=e;document.getElementById("installBtn").hidden=false});
+document.getElementById("installBtn").onclick=async()=>{
+ if(!deferredInstallPrompt)return;
+ deferredInstallPrompt.prompt();
+ await deferredInstallPrompt.userChoice;
+ deferredInstallPrompt=null;
+ document.getElementById("installBtn").hidden=true;
+};
+</script>
+</body>
+</html>
