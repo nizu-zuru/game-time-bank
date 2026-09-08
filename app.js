@@ -248,11 +248,35 @@ function updateBalanceDisplay(bal) {
   }
 }
 
+// --- 追加: stickyTimerを更新する関数 ---
+function updateStickyTimer() {
+  const el = document.getElementById("stickyTimer");
+  if (!el) return;
+  el.style.display = "block"; // 非表示状態から表示に切り替え
+  
+  const s = data.activeSession;
+  if (s) {
+    // ゲーム中：タイマーを表示して色を赤系にする
+    const remaining = Math.max(0, s.allowedSec - sessionElapsedSec());
+    el.textContent = "🎮 " + timerText(remaining);
+    el.style.color = "#e96565";
+    el.style.background = "#fee2e2";
+  } else {
+    // 待機中：残高を表示して色を青系にする
+    const bal = Math.floor(balance());
+    el.textContent = "残り " + bal + "分";
+    el.style.color = "#4b7bec";
+    el.style.background = "#eef2f7";
+  }
+}
+
 function render(){
  document.getElementById("todayLabel").textContent=dateLabel();
  const bal=balance();
  
  updateBalanceDisplay(bal);
+ 
+ updateStickyTimer(); // ← ここでヘッダーの残り時間を更新
  
  document.getElementById("todayEarned").textContent=mins(earned());
  document.getElementById("todayUsed").textContent=mins(used()+activeElapsedMinutes());
@@ -388,6 +412,8 @@ function startLiveTimer(){
   
   const bal=balance();
   updateBalanceDisplay(bal);
+  
+  updateStickyTimer(); // ← ここでもヘッダーの残り時間をリアルタイム更新
   
   document.getElementById("todayUsed").textContent=mins(used()+activeElapsedMinutes());
   document.getElementById("sumUse").textContent=`−${Math.round(used()+activeElapsedMinutes())}分`;
