@@ -203,42 +203,79 @@ function fixOneLineBalanceLayout() {
   const parent = bal.parentElement;
   if (!parent) return;
 
+  // 親要素をフレックスボックスにして横並び化
   parent.style.display = "flex";
   parent.style.flexDirection = "row";
   parent.style.flexWrap = "wrap";
   parent.style.justifyContent = "center";
-  parent.style.alignItems = "baseline";
-  parent.style.gap = "6px";
-  parent.style.padding = "16px 12px";
+  parent.style.alignItems = "baseline"; // 文字の下端を揃える
 
-  bal.style.order = "2";
-  bal.style.fontSize = "32px";
-  bal.style.margin = "0";
+  const currentBalance = balance();
 
-  msg.style.order = "3";
+  // 「ゲームできるよ！」専用の要素を作成
+  let suffix = document.getElementById("balanceSuffix");
+  if (!suffix) {
+    suffix = document.createElement("div");
+    suffix.id = "balanceSuffix";
+    parent.appendChild(suffix);
+  }
+
+  // 残り時間がある場合とない場合でテキストを変更
+  if (currentBalance > 0) {
+    msg.textContent = "あと";
+    msg.style.width = "auto";
+    suffix.textContent = "ゲームできるよ！";
+    suffix.style.display = "block";
+  } else {
+    msg.textContent = "クエストをして時間をGETしよう！";
+    msg.style.width = "100%";
+    msg.style.textAlign = "center";
+    suffix.style.display = "none";
+  }
+
+  // 1番目: 「あと」
+  msg.style.order = "1";
   msg.style.fontSize = "18px";
-  msg.style.margin = "0";
+  msg.style.margin = "0 4px 0 0";
+  msg.style.fontWeight = "bold";
 
-  Array.from(parent.children).forEach(child => {
-    if (child !== bal && child !== msg) {
-      if (child.textContent.includes("今日") || child.id?.includes("today") || child.className?.includes("sub")) {
-        child.style.width = "100%";
-        child.style.order = "10";
-        child.style.marginTop = "6px";
-      } else {
-        child.style.order = "1";
-        child.style.fontSize = "18px";
-        child.style.margin = "0";
-      }
+  // 2番目: 数字（360分）
+  bal.style.order = "2";
+  bal.style.fontSize = "38px"; 
+  bal.style.margin = "0";
+  bal.style.lineHeight = "1";
+
+  // 3番目: 「ゲームできるよ！」
+  suffix.style.order = "3";
+  suffix.style.fontSize = "18px";
+  suffix.style.margin = "0 0 0 4px";
+  suffix.style.fontWeight = "bold";
+
+  // 単位の「分」のサイズを少し調整
+  const span = bal.querySelector("span");
+  if (span) {
+    span.style.fontSize = "22px";
+    span.style.marginLeft = "2px";
+  }
+
+  // 今日GETなどのサブ情報はすべて下の行に押し出す
+  for (let i = 0; i < parent.children.length; i++) {
+    const child = parent.children[i];
+    if (child !== bal && child !== msg && child !== suffix) {
+      child.style.order = "4";
+      child.style.width = "100%";
+      child.style.marginTop = "12px";
+      child.style.textAlign = "center";
     }
-  });
+  }
 }
 
 function render(){
  document.getElementById("todayLabel").textContent=dateLabel();
  const bal=balance();
  document.getElementById("balance").innerHTML=`${Math.floor(bal)}<span>分</span>`;
- document.getElementById("remainMessage").textContent=bal>0?"ゲームできるよ！":"クエストをして時間をGETしよう！";
+ // テキストは上の fixOneLineBalanceLayout で上書きされるため空でOKですが念のためベースを入れておきます
+ document.getElementById("remainMessage").textContent=bal>0?"":"クエストをして時間をGETしよう！";
  document.getElementById("todayEarned").textContent=mins(earned());
  document.getElementById("todayUsed").textContent=mins(used()+activeElapsedMinutes());
  document.getElementById("studyTotal").textContent=earned();
@@ -648,7 +685,6 @@ document.getElementById("addCategoryBtn").onclick = () => {
 
 document.getElementById("saveSettings").onclick=()=>{
  if(document.getElementById("categorySettings")) saveCategorySettings();
- const oldById=Object.fromEntries(data.tasks.map(t=>[t.id,t]));
  const rows=[...document.querySelectorAll("#settingsTasks .setting-row")];
  data.tasks=rows.map((r,i)=>{
   const id=r.dataset.id||("custom"+Date.now()+i);
