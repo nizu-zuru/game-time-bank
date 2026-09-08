@@ -637,6 +637,21 @@ document.getElementById("factoryReset").onclick=()=>{
  }
 };
 
+/* --- 0時（深夜）をまたいだ時の自動更新 --- */
+function scheduleMidnightRefresh() {
+  const now = new Date();
+  // 今日の夜中の0時0分0秒のDateオブジェクトを作成し、+1日して「明日の0時0分0秒」にする
+  const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  const timeUntilMidnight = tomorrow - now; // 0時までの残り時間（ミリ秒）
+  
+  // 0時になったらページをリロードして画面全体を完全リフレッシュする
+  setTimeout(() => {
+    location.reload();
+  }, timeUntilMidnight);
+}
+// スクリプト読み込み時にタイマーをセット
+scheduleMidnightRefresh();
+
 if(data.activeSession){
  const remaining=Math.max(0,data.activeSession.allowedSec-sessionElapsedSec());
  if(remaining<=0)finishTimer(true);
