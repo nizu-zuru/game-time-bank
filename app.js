@@ -1,14 +1,15 @@
 const customStyle = document.createElement('style');
 customStyle.textContent = `
-.setting-row{grid-template-columns:34px 115px minmax(70px,1fr) 75px 38px!important; gap:4px;}
-@media(max-width:520px){.setting-row{grid-template-columns:28px 85px minmax(60px,1fr) 65px 34px!important; gap:2px;}}
+.setting-row{grid-template-columns:34px 115px minmax(70px,1fr) 65px 38px!important; gap:4px;}
+@media(max-width:520px){.setting-row{grid-template-columns:28px 85px minmax(60px,1fr) 55px 34px!important; gap:2px;}}
 .setting-row input.sm { padding: 4px; text-align: center; }
-.setting-row .s-manual { transform: scale(1.2); margin-right: 3px; cursor: pointer; }
+.setting-row .s-manual { transform: scale(1.1); margin-right: 2px; cursor: pointer; }
 .task.partial { border-color:#8cc3ff; background:#f4f9ff; }
 .task.partial .check { background:#e7f1ff; border-color:#8cc3ff; color:#4b7bec; font-weight:900; }
-.task-count-input { width: 48px; padding: 6px 2px; text-align: center; border: 2px solid #e1e8f0; border-radius: 6px; font-size: 16px; font-weight: 900; color: #4b7bec; background: #fff; transition: 0.2s; }
+.task-count-input { width: 44px; padding: 4px 2px; text-align: center; border: 2px solid #e1e8f0; border-radius: 6px; font-size: 15px; font-weight: 900; color: #4b7bec; background: #fff; transition: 0.2s; }
 .task-count-input:focus { outline: none; border-color: #4b7bec; background: #f4f9ff; }
-.manual-input-wrap { display: flex; align-items: center; gap: 4px; margin: 0 5px 0 10px; }
+.manual-input-wrap { display: flex; align-items: center; gap: 3px; flex-shrink: 0; }
+.task-right-area { display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-left: auto; }
 `;
 document.head.appendChild(customStyle);
 
@@ -155,12 +156,11 @@ function balance(){
 }
 function showToast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");clearTimeout(showToast.t);showToast.t=setTimeout(()=>t.classList.remove("show"),1800)}
 
-// 回数入力枠の値が変わったときの処理（グローバル関数）
 window.updateManualCount = (id, val) => {
   let num = parseInt(val) || 0;
   if (num < 0) num = 0;
-  day().done = day().done.filter(x => x !== id); // 一旦リセット
-  for(let i=0; i<num; i++) day().done.push(id);  // 入力された回数分追加
+  day().done = day().done.filter(x => x !== id);
+  for(let i=0; i<num; i++) day().done.push(id);
   save(); render(); showToast("回数を更新しました");
 };
 
@@ -198,29 +198,25 @@ function render(){
   
   const checkHtml = done ? "✓" : "";
 
-  // 入力枠がONの場合は入力欄を表示
-  let manualHtml = "";
-  let pointsHtml = `＋${t.min}分`;
-
+  let rightAreaHtml = "";
   if (t.allowManualCount) {
-    manualHtml = `<div class="manual-input-wrap" onclick="event.stopPropagation()">
+    rightAreaHtml = `<div class="manual-input-wrap" onclick="event.stopPropagation()">
       <input type="number" class="task-count-input" value="${count}" min="0" onchange="updateManualCount('${t.id}', this.value)">
       <span style="font-size:12px;font-weight:bold;color:#68778c;">回</span>
     </div>`;
-    pointsHtml = `＋${t.min}分<br><span style="font-size:10px;color:#8793a5;font-weight:normal;">/回</span>`;
+  } else {
+    rightAreaHtml = `<div class="points" style="text-align:right;line-height:1.2;">＋${t.min}分</div>`;
   }
 
-  el.innerHTML=`<div class="task-icon task-cat ${cc}">${esc(t.icon||"📝")}</div><div class="check" aria-label="完了">${checkHtml}</div><div style="flex-grow:1;"><div class="task-name">${esc(t.name)}</div><div class="task-cat-text">${esc(taskCategoryText(t))}</div></div>${manualHtml}<div class="points" style="text-align:right;line-height:1.2;min-width:45px;">${pointsHtml}</div>`;
+  el.innerHTML=`<div class="task-icon task-cat ${cc}">${esc(t.icon||"📝")}</div><div class="check" aria-label="完了">${checkHtml}</div><div style="flex-grow:1;min-width:0;overflow:hidden;"><div class="task-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(t.name)}</div><div class="task-cat-text">${esc(taskCategoryText(t))}</div></div><div class="task-right-area">${rightAreaHtml}</div>`;
   
   el.onclick=(e)=>{
-    if(e.target.tagName === 'INPUT') return; // 入力欄をタッチした場合は無効
+    if(e.target.tagName === 'INPUT') return;
     
     if(t.allowManualCount){
-      // 回数入力がONのクエストをタッチした場合は回数を+1する
       day().done.push(t.id);
       showToast(`🎉 ＋${t.min}分 GET！ (計${count+1}回)`);
     }else{
-      // 従来のON/OFFクエスト
       if(done){
         day().done=day().done.filter(x=>x!==t.id);
         showToast("チェックを取り消しました");
@@ -441,9 +437,9 @@ function addSettingRow(t,box){
  r.innerHTML=`<div class="drag-handle" title="上下にスワイプして並べ替え">☰</div>
  <select class="category-select">${categoryChoices.map(c=>`<option value="${c.value}" ${c.value===cat?"selected":""}>${esc(categoryLabel(c.value))}</option>`).join("")}</select>
  <input class="sn" value="${esc(t.name)}">
- <div style="display:flex;flex-direction:column;gap:4px;font-size:10px;align-items:center;justify-content:center;color:#68778c;">
+ <div style="display:flex;flex-direction:column;gap:2px;font-size:10px;align-items:center;justify-content:center;color:#68778c;">
    <div><input class="sm" type="number" min="0" value="${t.min}" style="width:40px">分</div>
-   <label style="display:flex;align-items:center;"><input type="checkbox" class="s-manual" ${t.allowManualCount?'checked':''}> 回数入力枠</label>
+   <label style="display:flex;align-items:center;white-space:nowrap;"><input type="checkbox" class="s-manual" ${t.allowManualCount?'checked':''}> 回数枠</label>
  </div>
  <button class="remove-task">✕</button>`;
  r.querySelector(".remove-task").onclick=()=>r.remove();
