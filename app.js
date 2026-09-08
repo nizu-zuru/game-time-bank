@@ -45,14 +45,15 @@ document.head.appendChild(customStyle);
 
 const KEY="gameTimeBankV3";
 const defaultTasks=[
- {id:"music1",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"カレリア",min:30,allowManualCount:true},
+ {id:"study1",cat:"🏫 学校",category:"study",icon:"🏫",name:"音・計・リ",min:10,allowManualCount:false}
+ {id:"music1",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"カレリア(1回につき)",min:5,allowManualCount:true},
  {id:"music2",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"レッスンシート",min:25,allowManualCount:false},
- {id:"music3",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"レパートリー",min:5,allowManualCount:true},
+ {id:"music3",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"レパートリー",min:5,allowManualCount:false},
  {id:"music4",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"両手カデンツ",min:10,allowManualCount:false},
- {id:"music5",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"ロマンティックが止まらない",min:5,allowManualCount:false},
- {id:"eng1",cat:"💬 英会話",category:"english",icon:"💬",name:"ドリル",min:5,allowManualCount:true},
+ {id:"music5",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"ロマンティックが止まらない(1回につき)",min:5,allowManualCount:true},
+ {id:"eng1",cat:"💬 英会話",category:"english",icon:"💬",name:"ドリル",min:5,allowManualCount:false},
  {id:"eng2",cat:"💬 英会話",category:"english",icon:"💬",name:"Talking",min:10,allowManualCount:false},
- {id:"eng3",cat:"💬 英会話",category:"english",icon:"💬",name:"1ｍチャレ",min:10,allowManualCount:true}
+ {id:"eng3",cat:"💬 英会話",category:"english",icon:"💬",name:"1ｍチャレ",min:10,allowManualCount:false}
 ];
 
 let data=JSON.parse(localStorage.getItem(KEY)||"null")||{tasks:defaultTasks,days:{},activeSession:null};
@@ -65,7 +66,7 @@ if(!categoryChoices || categoryChoices.length === 0) {
   categoryChoices = [
    {value:"music",label:"🎹 音楽教室",icon:"🎹"},
    {value:"english",label:"💬 英会話",icon:"💬"},
-   {value:"study",label:"📚 勉強・宿題",icon:"📚"},
+   {value:"study",label:"🏫 学校",icon:"🏫"},
    {value:"other",label:"📝 その他",icon:"📝"}
   ];
 }
