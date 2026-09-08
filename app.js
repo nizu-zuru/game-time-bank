@@ -45,7 +45,8 @@ document.head.appendChild(customStyle);
 
 const KEY="gameTimeBankV3";
 const defaultTasks=[
- {id:"music1",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"カレリア",min:30,allowManualCount:true},
+ {id:"study1",cat:"🏫 学校",category:"english",icon:"🏫",name:"音・計・リ",min:10,allowManualCount:true}
+ {id:"music1",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"カレリア(1回につき)",min:30,allowManualCount:true},
  {id:"music2",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"レッスンシート",min:25,allowManualCount:false},
  {id:"music3",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"レパートリー",min:5,allowManualCount:true},
  {id:"music4",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"両手カデンツ",min:10,allowManualCount:false},
@@ -65,7 +66,7 @@ if(!categoryChoices || categoryChoices.length === 0) {
   categoryChoices = [
    {value:"music",label:"🎹 音楽教室",icon:"🎹"},
    {value:"english",label:"💬 英会話",icon:"💬"},
-   {value:"study",label:"📚 勉強・宿題",icon:"📚"},
+   {value:"study",label:"🏫 学校",icon:"🏫"},
    {value:"other",label:"📝 その他",icon:"📝"}
   ];
 }
@@ -194,6 +195,46 @@ window.updateManualCount = (id, val) => {
   save(); render(); showToast("回数を更新しました");
 };
 
+/* --- 「あと 〇〇分 ゲームできるよ！」を1行（横並び）にするレイアウト調整 --- */
+function fixOneLineBalanceLayout() {
+  const bal = document.getElementById("balance");
+  const msg = document.getElementById("remainMessage");
+  if (!bal || !msg) return;
+
+  const parent = bal.parentElement;
+  if (!parent) return;
+
+  parent.style.display = "flex";
+  parent.style.flexDirection = "row";
+  parent.style.flexWrap = "wrap";
+  parent.style.justifyContent = "center";
+  parent.style.alignItems = "baseline";
+  parent.style.gap = "6px";
+  parent.style.padding = "16px 12px";
+
+  bal.style.order = "2";
+  bal.style.fontSize = "32px";
+  bal.style.margin = "0";
+
+  msg.style.order = "3";
+  msg.style.fontSize = "18px";
+  msg.style.margin = "0";
+
+  Array.from(parent.children).forEach(child => {
+    if (child !== bal && child !== msg) {
+      if (child.textContent.includes("今日") || child.id?.includes("today") || child.className?.includes("sub")) {
+        child.style.width = "100%";
+        child.style.order = "10";
+        child.style.marginTop = "6px";
+      } else {
+        child.style.order = "1";
+        child.style.fontSize = "18px";
+        child.style.margin = "0";
+      }
+    }
+  });
+}
+
 function render(){
  document.getElementById("todayLabel").textContent=dateLabel();
  const bal=balance();
@@ -270,6 +311,7 @@ function render(){
  });
  renderWeek();
  renderTimer();
+ fixOneLineBalanceLayout();
 }
 
 function renderWeek(){
@@ -640,16 +682,13 @@ document.getElementById("factoryReset").onclick=()=>{
 /* --- 0時（深夜）をまたいだ時の自動更新 --- */
 function scheduleMidnightRefresh() {
   const now = new Date();
-  // 今日の夜中の0時0分0秒のDateオブジェクトを作成し、+1日して「明日の0時0分0秒」にする
   const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-  const timeUntilMidnight = tomorrow - now; // 0時までの残り時間（ミリ秒）
+  const timeUntilMidnight = tomorrow - now;
   
-  // 0時になったらページをリロードして画面全体を完全リフレッシュする
   setTimeout(() => {
     location.reload();
   }, timeUntilMidnight);
 }
-// スクリプト読み込み時にタイマーをセット
 scheduleMidnightRefresh();
 
 if(data.activeSession){
