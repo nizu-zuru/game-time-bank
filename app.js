@@ -97,7 +97,14 @@ function saveCategorySettings(){
 }
 
 let timerInterval=null;
-const todayKey=()=>new Date().toISOString().slice(0,10);
+
+// ----- 修正箇所1：ローカル時間（日本時間）で今日の日付を取得する関数を追加 -----
+function getLocalYMD(d) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+const todayKey=()=>getLocalYMD(new Date());
+// -------------------------------------------------------------------------
+
 function day(){const k=todayKey();if(!data.days[k])data.days[k]={done:[],logs:[]};return data.days[k]}
 function save(){localStorage.setItem(KEY,JSON.stringify(data))}
 function mins(n){return `${Math.max(0,Math.round(n))}分`}
@@ -167,7 +174,11 @@ function renderWeek(){
  const now=new Date(),labels=["日","月","火","水","木","金","土"],rows=[];
  for(let i=6;i>=0;i--){
   const d=new Date(now);d.setDate(now.getDate()-i);
-  const k=d.toISOString().slice(0,10),dd=data.days[k]||{done:[]};
+  
+  // ----- 修正箇所2：週間グラフ処理もローカル時間を使用する -----
+  const k=getLocalYMD(d),dd=data.days[k]||{done:[]};
+  // --------------------------------------------------------
+  
   rows.push({k,label:labels[d.getDay()],value:earnedFor(dd),today:i===0});
  }
  const max=Math.max(30,...rows.map(x=>x.value));
@@ -483,3 +494,11 @@ if(data.activeSession){
  else startLiveTimer();
 }
 render();
+
+// ----- 修正箇所3：スリープ復帰時などの画面自動更新処理を追加 -----
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    render();
+  }
+});
+// --------------------------------------------------------
