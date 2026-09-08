@@ -10,6 +10,36 @@ customStyle.textContent = `
 .task-count-input:focus { outline: none; border-color: #4b7bec; background: #f4f9ff; }
 .manual-input-wrap { display: flex; align-items: center; gap: 3px; flex-shrink: 0; }
 .task-right-area { display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-left: auto; }
+
+/* 誤操作防止：最下部リセットエリアのスタイル */
+#dangerFooterArea {
+  margin-top: 50px;
+  padding: 24px 12px 50px;
+  border-top: 1px dashed #d1d8e0;
+  text-align: center;
+  background: transparent;
+}
+#dangerFooterArea p {
+  font-size: 11px;
+  color: #a0aec0;
+  margin-bottom: 8px;
+}
+.btn-subtle-reset {
+  background: #edf2f7 !important;
+  color: #718096 !important;
+  border: 1px solid #cbd5e0 !important;
+  font-size: 11px !important;
+  padding: 6px 12px !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+  opacity: 0.8;
+  cursor: pointer;
+  margin: 0 4px;
+}
+.btn-subtle-reset:hover {
+  opacity: 1;
+  background: #e2e8f0 !important;
+}
 `;
 document.head.appendChild(customStyle);
 
@@ -334,14 +364,54 @@ document.querySelectorAll("[data-min]").forEach(b=>b.onclick=()=>{
  day().logs.push({start:null,end:null,min:n,remain:bal-n,kind:"直接入力"});save();render();showToast(`🎮 −${n}分 使用`);
 });
 
-document.getElementById("resetTodayBtn").onclick=()=>{
- if(data.activeSession){alert("ゲーム中はリセットできません。先に終了してください。");return}
- if(confirm("今日のチェックと記録を全部リセットしますか？")){data.days[todayKey()]={done:[],logs:[]};save();render();showToast("今日をリセットしました")}
-};
-document.getElementById("clearLogsBtn").onclick=()=>{
- if(data.activeSession){alert("ゲーム中は記録を削除できません。");return}
- if(confirm("今日のゲーム記録だけ削除しますか？")){day().logs=[];save();render();showToast("ゲーム記録を削除しました")}
-};
+/* --- 誤操作防止対策：リセットボタンを最下部領域へ移動＆2段階確認 --- */
+function setupRelocatedResetButtons() {
+  const resetBtn = document.getElementById("resetTodayBtn");
+  const clearLogsBtn = document.getElementById("clearLogsBtn");
+  
+  if (resetBtn) {
+    let footerArea = document.getElementById("dangerFooterArea");
+    if (!footerArea) {
+      footerArea = document.createElement("div");
+      footerArea.id = "dangerFooterArea";
+      footerArea.innerHTML = "<p>※保護者用管理操作エリア</p>";
+      
+      const appContainer = document.querySelector(".app-container") || document.querySelector(".container") || document.body;
+      appContainer.appendChild(footerArea);
+    }
+    
+    resetBtn.className = "btn-subtle-reset";
+    footerArea.appendChild(resetBtn);
+    
+    if (clearLogsBtn) {
+      clearLogsBtn.className = "btn-subtle-reset";
+      footerArea.appendChild(clearLogsBtn);
+    }
+
+    resetBtn.onclick = () => {
+      if(data.activeSession){alert("ゲーム中はリセットできません。先に終了してください。");return}
+      if(confirm("【保護者確認】\n今日のチェックと記録をすべて消去しますか？")){
+        if(confirm("※本当に今日の記録をリセットしてよろしいですか？（取り消せません）")){
+          data.days[todayKey()]={done:[],logs:[]};
+          save();render();
+          showToast("今日をリセットしました");
+        }
+      }
+    };
+
+    if (clearLogsBtn) {
+      clearLogsBtn.onclick = () => {
+        if(data.activeSession){alert("ゲーム中は記録を削除できません。");return}
+        if(confirm("【保護者確認】今日のゲーム記録だけ削除しますか？")){
+          day().logs=[];
+          save();render();
+          showToast("ゲーム記録を削除しました");
+        }
+      };
+    }
+  }
+}
+setTimeout(setupRelocatedResetButtons, 100);
 
 document.getElementById("settingsBtn").onclick = () => {
   const currentPwd = localStorage.getItem(KEY+"_password") || "0000";
