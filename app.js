@@ -1,58 +1,14 @@
-const customStyle = document.createElement('style');
-customStyle.textContent = `
-.setting-row{grid-template-columns:30px 110px minmax(40px,1fr) auto 34px!important; gap:4px; align-items:center;}
-@media(max-width:520px){.setting-row{grid-template-columns:24px 75px minmax(30px,1fr) auto 28px!important; gap:2px;}}
-.setting-row input.sm { width: 52px; padding: 4px 2px; text-align: center; }
-.setting-row .s-manual { transform: scale(1.1); margin-right: 2px; cursor: pointer; }
-.task.partial { border-color:#8cc3ff; background:#f4f9ff; }
-.task.partial .check { background:#e7f1ff; border-color:#8cc3ff; color:#4b7bec; font-weight:900; }
-.task-count-input { width: 44px; padding: 4px 2px; text-align: center; border: 2px solid #e1e8f0; border-radius: 6px; font-size: 15px; font-weight: 900; color: #4b7bec; background: #fff; transition: 0.2s; }
-.task-count-input:focus { outline: none; border-color: #4b7bec; background: #f4f9ff; }
-.manual-input-wrap { display: flex; align-items: center; gap: 3px; flex-shrink: 0; }
-.task-right-area { display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-left: auto; }
-
-/* 誤操作防止：最下部リセットエリアのスタイル */
-#dangerFooterArea {
-  margin-top: 50px;
-  padding: 24px 12px 50px;
-  border-top: 1px dashed #d1d8e0;
-  text-align: center;
-  background: transparent;
-}
-#dangerFooterArea p {
-  font-size: 11px;
-  color: #a0aec0;
-  margin-bottom: 8px;
-}
-.btn-subtle-reset {
-  background: #edf2f7 !important;
-  color: #718096 !important;
-  border: 1px solid #cbd5e0 !important;
-  font-size: 11px !important;
-  padding: 6px 12px !important;
-  border-radius: 6px !important;
-  box-shadow: none !important;
-  opacity: 0.8;
-  cursor: pointer;
-  margin: 0 4px;
-}
-.btn-subtle-reset:hover {
-  opacity: 1;
-  background: #e2e8f0 !important;
-}
-`;
-document.head.appendChild(customStyle);
-
 const KEY="gameTimeBankV3";
 const defaultTasks=[
- {id:"music1",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"カレリア",min:30,allowManualCount:true},
- {id:"music2",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"レッスンシート",min:25,allowManualCount:false},
- {id:"music3",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"レパートリー",min:5,allowManualCount:true},
- {id:"music4",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"両手カデンツ",min:10,allowManualCount:false},
- {id:"music5",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"ロマンティックが止まらない",min:5,allowManualCount:false},
- {id:"eng1",cat:"💬 英会話",category:"english",icon:"💬",name:"ドリル",min:5,allowManualCount:true},
- {id:"eng2",cat:"💬 英会話",category:"english",icon:"💬",name:"Talking",min:10,allowManualCount:false},
- {id:"eng3",cat:"💬 英会話",category:"english",icon:"💬",name:"1ｍチャレ",min:10,allowManualCount:true}
+ {id:"study1",cat:"🏫 学校",category:"study",icon:"🏫",name:"音・計算・リ",min:10},
+ {id:"music1",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"カルレア",min:5},
+ {id:"music2",cat:"🎹 音楽教室",category:"music",icon:"🎵",name:"レッスンシート",min:25},
+ {id:"music3",cat:"🎹 音楽教室",category:"music",icon:"🎼",name:"レパートリー",min:5},
+ {id:"music4",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"両手カデンツ",min:10},
+ {id:"music5",cat:"🎹 音楽教室",category:"music",icon:"🎵",name:"ロマンティックな曲",min:5},
+ {id:"eng1",cat:"💬 英会話",category:"english",icon:"💬",name:"ビル",min:5},
+ {id:"eng2",cat:"💬 英会話",category:"english",icon:"🗣️",name:"Talking",min:10},
+ {id:"eng3",cat:"💬 英会話",category:"english",icon:"📖",name:"意味・単語",min:10}
 ];
 
 let data=JSON.parse(localStorage.getItem(KEY)||"null")||{tasks:defaultTasks,days:{},activeSession:null};
@@ -65,7 +21,7 @@ if(!categoryChoices || categoryChoices.length === 0) {
   categoryChoices = [
    {value:"music",label:"🎹 音楽教室",icon:"🎹"},
    {value:"english",label:"💬 英会話",icon:"💬"},
-   {value:"study",label:"📚 勉強・宿題",icon:"📚"},
+   {value:"study",label:"🏫 学校",icon:"🏫"},
    {value:"other",label:"📝 その他",icon:"📝"}
   ];
 }
@@ -113,7 +69,7 @@ function renderCategorySettings(){
       alert("種類は最低1つ必要です。");
       return;
     }
-    if(confirm(`「${c.label}」を削除しますか？\n※この種類を使っているクエストは、後で種類を選び直す必要があります。`)){
+    if(confirm(`「${c.label}」を削除しますか？\n※この種類を使っている宿題は、後で種類を選び直す必要があります。`)){
       categoryChoices.splice(index, 1);
       renderCategorySettings();
       document.querySelectorAll(".category-select").forEach(sel => {
@@ -142,26 +98,13 @@ function saveCategorySettings(){
 }
 
 let timerInterval=null;
-
-function getLocalYMD(d) {
-  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-}
-const todayKey=()=>getLocalYMD(new Date());
-
-function day(){const k=todayKey();if(!data.days[k])data.days[k]={done:[]};if(!data.days[k].logs)data.days[k].logs=[];return data.days[k]}
+const todayKey=()=>new Date().toISOString().slice(0,10);
+function day(){const k=todayKey();if(!data.days[k])data.days[k]={done:[],logs:[]};return data.days[k]}
 function save(){localStorage.setItem(KEY,JSON.stringify(data))}
 function mins(n){return `${Math.max(0,Math.round(n))}分`}
 function timeStr(d){return new Date(d).toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit"})}
 function dateLabel(){const d=new Date(),w=["日","月","火","水","木","金","土"][d.getDay()];return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${w}）`}
-
-function earnedFor(d){
- return data.tasks.reduce((s,t) => {
-   const count = (d.done || []).filter(x => x === t.id).length;
-   const validCount = t.allowManualCount ? count : Math.min(count, 1);
-   return s + (validCount * Number(t.min));
- }, 0);
-}
-
+function earnedFor(d){return data.tasks.reduce((s,t)=>s+(d.done?.includes(t.id)?Number(t.min):0),0)}
 function earned(){return earnedFor(day())}
 function used(){return day().logs.reduce((s,l)=>s+Number(l.min),0)}
 function carry(){
@@ -186,141 +129,32 @@ function balance(){
 }
 function showToast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");clearTimeout(showToast.t);showToast.t=setTimeout(()=>t.classList.remove("show"),1800)}
 
-window.updateManualCount = (id, val) => {
-  let num = parseInt(val) || 0;
-  if (num < 0) num = 0;
-  day().done = day().done.filter(x => x !== id);
-  for(let i=0; i<num; i++) day().done.push(id);
-  save(); render(); showToast("回数を更新しました");
-};
-
-/* --- 周囲の文字を小さく、数字を大きく調整したレイアウト関数 --- */
-function cleanUpOldLayout() {
-  const msgEl = document.getElementById("remainMessage");
-  if (msgEl) {
-    msgEl.style.display = "none";
-    if (msgEl.parentElement) {
-      Array.from(msgEl.parentElement.childNodes).forEach(node => {
-        if (node.nodeType === Node.TEXT_NODE && node.textContent.includes("あと")) {
-           node.textContent = node.textContent.replace(/あと/g, "").trim();
-        }
-      });
-      if (msgEl.parentElement.tagName === "P" && msgEl.parentElement.textContent.trim() === "") {
-         msgEl.parentElement.style.display = "none";
-      }
-    }
-  }
-  
-  const oldSuffix = document.getElementById("balanceSuffix");
-  if (oldSuffix) oldSuffix.remove();
-  
-  const balEl = document.getElementById("balance");
-  if (balEl && balEl.parentElement) {
-     balEl.parentElement.style.display = "";
-     balEl.parentElement.style.flexDirection = "";
-     balEl.parentElement.style.flexWrap = "";
-     balEl.parentElement.style.justifyContent = "";
-     balEl.parentElement.style.alignItems = "";
-  }
-}
-
-function updateBalanceDisplay(bal) {
-  cleanUpOldLayout();
-  const balEl = document.getElementById("balance");
-  if (!balEl) return;
-  
-  if (bal > 0) {
-     balEl.innerHTML = `
-       <div style="display:flex; align-items:baseline; justify-content:center; flex-wrap:wrap; margin-bottom: 6px;">
-         <span style="font-size:14px; font-weight:normal; margin-right:4px; opacity:0.9;">あと</span>
-         <span style="font-size:48px; line-height:1; font-weight:900; margin:0 3px;">${Math.floor(bal)}<span style="font-size:20px; font-weight:bold; margin-left:2px;">分</span></span>
-         <span style="font-size:14px; font-weight:normal; margin-left:4px; opacity:0.9;">ゲームできるよ！</span>
-       </div>
-     `;
-  } else {
-     balEl.innerHTML = `
-       <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; margin-bottom: 6px;">
-         <span style="font-size:14px; font-weight:normal; opacity:0.9;">クエストをして時間をGETしよう！</span>
-         <span style="font-size:48px; line-height:1; font-weight:900;">0<span style="font-size:20px; font-weight:bold; margin-left:2px;">分</span></span>
-       </div>
-     `;
-  }
-
-  const sticky = document.getElementById("stickyTimer");
-  if (sticky) {
-    sticky.style.display = "block";
-    sticky.textContent = `残り ${Math.floor(bal)}分`;
-  }
-}
-
 function render(){
  document.getElementById("todayLabel").textContent=dateLabel();
  const bal=balance();
- 
- updateBalanceDisplay(bal);
- 
+ // 残高表示を切り上げ(Math.ceil)に変更してタイマーとの表示ズレを解消
+ const displayBal = Math.ceil(bal);
+ document.getElementById("balance").innerHTML=`${displayBal}<span>分</span>`;
+ document.getElementById("remainMessage").textContent=bal>0?"ゲームできるよ！":"宿題をして時間をGETしよう！";
  document.getElementById("todayEarned").textContent=mins(earned());
  document.getElementById("todayUsed").textContent=mins(used()+activeElapsedMinutes());
  document.getElementById("studyTotal").textContent=earned();
-
- const completedTasks = data.tasks.filter(t => {
-   const count = day().done.filter(x => x === t.id).length;
-   return t.allowManualCount ? count > 0 : count >= 1;
- }).length;
-
- document.getElementById("taskDoneCount").textContent=completedTasks;
+ document.getElementById("taskDoneCount").textContent=day().done.length;
  document.getElementById("taskTotalCount").textContent=data.tasks.length;
- const pct=data.tasks.length?Math.min(100,completedTasks/data.tasks.length*100):0;
+ const pct=data.tasks.length?Math.min(100,day().done.length/data.tasks.length*100):0;
  document.getElementById("studyProgress").style.width=pct+"%";
  document.getElementById("carry").textContent=mins(carry());
  document.getElementById("sumEarn").textContent=`＋${earned()}分`;
  document.getElementById("sumUse").textContent=`−${Math.round(used()+activeElapsedMinutes())}分`;
- document.getElementById("summaryBalance").textContent=mins(bal);
+ document.getElementById("summaryBalance").textContent=mins(displayBal);
  const list=document.getElementById("taskList");list.innerHTML="";
- 
  data.tasks.forEach(t=>{
-  const count = day().done.filter(x => x === t.id).length;
-  const done = t.allowManualCount ? count > 0 : count >= 1;
-  
-  const cc=categoryClass(t.category);
-  const el=document.createElement("div");
+  const done=day().done.includes(t.id),el=document.createElement("div"),cc=categoryClass(t.category);
   el.className="task cat-"+cc+(done?" done":"");
-  
-  const checkHtml = done ? "✓" : "";
-
-  let rightAreaHtml = "";
-  if (t.allowManualCount) {
-    rightAreaHtml = `<div class="manual-input-wrap" onclick="event.stopPropagation()">
-      <input type="number" class="task-count-input" value="${count}" min="0" onchange="updateManualCount('${t.id}', this.value)">
-      <span style="font-size:12px;font-weight:bold;color:#68778c;">回</span>
-      <span class="points" style="margin-left:2px;line-height:1.2;">×${t.min}分</span>
-    </div>`;
-  } else {
-    rightAreaHtml = `<div class="points" style="text-align:right;line-height:1.2;">＋${t.min}分</div>`;
-  }
-
-  el.innerHTML=`<div class="task-icon task-cat ${cc}">${esc(t.icon||"📝")}</div><div class="check" aria-label="完了">${checkHtml}</div><div style="flex-grow:1;min-width:0;overflow:hidden;"><div class="task-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(t.name)}</div><div class="task-cat-text">${esc(taskCategoryText(t))}</div></div><div class="task-right-area">${rightAreaHtml}</div>`;
-  
-  el.onclick=(e)=>{
-    if(e.target.tagName === 'INPUT') return;
-    
-    if(t.allowManualCount){
-      day().done.push(t.id);
-      showToast(`🎉 ＋${t.min}分 GET！ (計${count+1}回)`);
-    }else{
-      if(done){
-        day().done=day().done.filter(x=>x!==t.id);
-        showToast("チェックを取り消しました");
-      }else{
-        day().done.push(t.id);
-        showToast(`🎉 クエスト完了！ ＋${t.min}分`);
-      }
-    }
-    save();render();
-  };
+  el.innerHTML=`<div class="task-icon task-cat ${cc}">${esc(t.icon||"📝")}</div><div class="check" aria-label="完了">${done?"✓":""}</div><div><div class="task-name">${esc(t.name)}</div><div class="task-cat-text">${esc(taskCategoryText(t))}</div></div><div class="points">＋${t.min}分</div>`;
+  el.onclick=()=>{if(done){day().done=day().done.filter(x=>x!==t.id);showToast("チェックを取り消しました")}else{day().done.push(t.id);showToast(`🎉 ＋${t.min}分 GET！`)}save();render()};
   list.appendChild(el);
  });
-
  const logs=document.getElementById("logs");logs.innerHTML="";
  if(!day().logs.length)logs.innerHTML='<div class="empty">まだゲーム記録はありません</div>';
  else [...day().logs].reverse().forEach(l=>{
@@ -336,7 +170,7 @@ function renderWeek(){
  const now=new Date(),labels=["日","月","火","水","木","金","土"],rows=[];
  for(let i=6;i>=0;i--){
   const d=new Date(now);d.setDate(now.getDate()-i);
-  const k=getLocalYMD(d),dd=data.days[k]||{done:[]};
+  const k=d.toISOString().slice(0,10),dd=data.days[k]||{done:[]};
   rows.push({k,label:labels[d.getDay()],value:earnedFor(dd),today:i===0});
  }
  const max=Math.max(30,...rows.map(x=>x.value));
@@ -346,7 +180,7 @@ function renderWeek(){
  document.getElementById("starRow").innerHTML=Array.from({length:7},(_,i)=>`<span class="star ${i<stars?"on":""}">⭐</span>`).join("");
 }
 
-function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&quot;","'":"&#039;"}[m]))}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]))}
 function sessionElapsedSec(){return data.activeSession?Math.max(0,(Date.now()-data.activeSession.startAt)/1000):0}
 function timerText(sec){
  sec=Math.max(0,Math.ceil(sec));
@@ -378,10 +212,10 @@ function renderTimer(){
 
 function startTimer(){
  if(data.activeSession){renderTimer();return}
- const bal=Math.floor(balance());
- if(bal<=0){alert("ゲーム時間がありません。クエストをクリアして時間をGETしましょう！");return}
+ const bal=balance();
+ if(bal<=0){alert("ゲーム時間がありません。まず宿題をして時間をGETしましょう！");return}
  data.activeSession={startAt:Date.now(),allowedSec:bal*60};
- save(); showToast(`🎮 ${bal}分スタート！`); render(); startLiveTimer();
+ save(); showToast(`🎮 ${Math.ceil(bal)}分スタート！`); render(); startLiveTimer();
 }
 
 function startLiveTimer(){
@@ -390,13 +224,12 @@ function startLiveTimer(){
   if(!data.activeSession){clearInterval(timerInterval);return}
   const remaining=Math.max(0,data.activeSession.allowedSec-sessionElapsedSec());
   document.getElementById("timer").textContent=timerText(remaining);
-  
   const bal=balance();
-  updateBalanceDisplay(bal);
-  
+  const displayBal = Math.ceil(bal);
+  document.getElementById("balance").innerHTML=`${displayBal}<span>分</span>`;
   document.getElementById("todayUsed").textContent=mins(used()+activeElapsedMinutes());
   document.getElementById("sumUse").textContent=`−${Math.round(used()+activeElapsedMinutes())}分`;
-  document.getElementById("summaryBalance").textContent=mins(bal);
+  document.getElementById("summaryBalance").textContent=mins(displayBal);
   if(remaining<=0)finishTimer(true);
  },250);
 }
@@ -409,7 +242,7 @@ function finishTimer(auto=false){
  const start=s.startAt,end=Date.now();
  data.activeSession=null;
  if(useMin>0){
-  const remainAfter=Math.max(0,Math.floor(carry()+earned()-used()-useMin));
+  const remainAfter=Math.max(0,Math.ceil(carry()+earned()-used()-useMin));
   day().logs.push({start,end,min:useRounded,remain:remainAfter,kind:auto?"タイマー（自動終了）":"タイマー"});
  }
  save();clearInterval(timerInterval);timerInterval=null;render();
@@ -426,54 +259,14 @@ document.querySelectorAll("[data-min]").forEach(b=>b.onclick=()=>{
  day().logs.push({start:null,end:null,min:n,remain:bal-n,kind:"直接入力"});save();render();showToast(`🎮 −${n}分 使用`);
 });
 
-/* --- 誤操作防止対策：リセットボタンを最下部領域へ移動＆2段階確認 --- */
-function setupRelocatedResetButtons() {
-  const resetBtn = document.getElementById("resetTodayBtn");
-  const clearLogsBtn = document.getElementById("clearLogsBtn");
-  
-  if (resetBtn) {
-    let footerArea = document.getElementById("dangerFooterArea");
-    if (!footerArea) {
-      footerArea = document.createElement("div");
-      footerArea.id = "dangerFooterArea";
-      footerArea.innerHTML = "<p>※保護者用管理操作エリア</p>";
-      
-      const appContainer = document.querySelector(".app-container") || document.querySelector(".container") || document.body;
-      appContainer.appendChild(footerArea);
-    }
-    
-    resetBtn.className = "btn-subtle-reset";
-    footerArea.appendChild(resetBtn);
-    
-    if (clearLogsBtn) {
-      clearLogsBtn.className = "btn-subtle-reset";
-      footerArea.appendChild(clearLogsBtn);
-    }
-
-    resetBtn.onclick = () => {
-      if(data.activeSession){alert("ゲーム中はリセットできません。先に終了してください。");return}
-      if(confirm("【保護者確認】\n今日のチェックと記録をすべて消去しますか？")){
-        if(confirm("※本当に今日の記録をリセットしてよろしいですか？（取り消せません）")){
-          data.days[todayKey()]={done:[],logs:[]};
-          save();render();
-          showToast("今日をリセットしました");
-        }
-      }
-    };
-
-    if (clearLogsBtn) {
-      clearLogsBtn.onclick = () => {
-        if(data.activeSession){alert("ゲーム中は記録を削除できません。");return}
-        if(confirm("【保護者確認】今日のゲーム記録だけ削除しますか？")){
-          day().logs=[];
-          save();render();
-          showToast("ゲーム記録を削除しました");
-        }
-      };
-    }
-  }
-}
-setTimeout(setupRelocatedResetButtons, 100);
+document.getElementById("resetTodayBtn").onclick=()=>{
+ if(data.activeSession){alert("ゲーム中はリセットできません。先に終了してください。");return}
+ if(confirm("今日のチェックと記録を全部リセットしますか？")){data.days[todayKey()]={done:[],logs:[]};save();render();showToast("今日をリセットしました")}
+};
+document.getElementById("clearLogsBtn").onclick=()=>{
+ if(data.activeSession){alert("ゲーム中は記録を削除できません。");return}
+ if(confirm("今日のゲーム記録だけ削除しますか？")){day().logs=[];save();render();showToast("ゲーム記録を削除しました")}
+};
 
 document.getElementById("settingsBtn").onclick = () => {
   const currentPwd = localStorage.getItem(KEY+"_password") || "0000";
@@ -519,19 +312,11 @@ function renderMonthlyReport() {
     const month = date.slice(0, 7);
     if (!monthly[month]) monthly[month] = { total: 0, categories: {} };
     
-    const countMap = {};
     (dayData.done || []).forEach(taskId => {
-       countMap[taskId] = (countMap[taskId] || 0) + 1;
-    });
-
-    Object.keys(countMap).forEach(taskId => {
        const t = data.tasks.find(x => x.id === taskId);
        if (t) {
-         const validCount = t.allowManualCount ? countMap[taskId] : Math.min(countMap[taskId], 1);
-         const earnedMin = validCount * Number(t.min);
-         
-         monthly[month].total += earnedMin;
-         monthly[month].categories[t.category] = (monthly[month].categories[t.category] || 0) + earnedMin;
+         monthly[month].total += Number(t.min);
+         monthly[month].categories[t.category] = (monthly[month].categories[t.category] || 0) + Number(t.min);
        }
     });
   }
@@ -570,10 +355,7 @@ function addSettingRow(t,box){
  r.innerHTML=`<div class="drag-handle" title="上下にスワイプして並べ替え">☰</div>
  <select class="category-select">${categoryChoices.map(c=>`<option value="${c.value}" ${c.value===cat?"selected":""}>${esc(categoryLabel(c.value))}</option>`).join("")}</select>
  <input class="sn" value="${esc(t.name)}">
- <div style="display:flex;flex-direction:row;align-items:center;gap:4px;font-size:11px;color:#68778c;white-space:nowrap;">
-   <div style="display:flex;align-items:center;gap:1px;"><input class="sm" type="number" min="0" value="${t.min}" style="width:52px">分</div>
-   <label style="display:flex;align-items:center;gap:1px;cursor:pointer;margin:0;"><input type="checkbox" class="s-manual" ${t.allowManualCount?'checked':''}> 回数枠</label>
- </div>
+ <input class="sm" type="number" min="0" value="${t.min}">
  <button class="remove-task">✕</button>`;
  r.querySelector(".remove-task").onclick=()=>r.remove();
  
@@ -624,8 +406,8 @@ function addSettingRow(t,box){
   const currentY = initialTop + deltaY + r.offsetHeight / 2;
   const siblings = [...box.querySelectorAll('.setting-row:not(.dragging)')];
   const nextSibling = siblings.find(sib => {
-    const rect = sib.getBoundingClientRect();
-    return currentY <= rect.top + rect.height / 2;
+   const rect = sib.getBoundingClientRect();
+   return currentY <= rect.top + rect.height / 2;
   });
 
   if (placeholder.nextSibling !== nextSibling) box.insertBefore(placeholder, nextSibling || null);
@@ -634,14 +416,14 @@ function addSettingRow(t,box){
  const endPointer = e => {
   if(pointerId !== e.pointerId) return;
   if(dragging){
-    if(placeholder){
-     box.insertBefore(r, placeholder);
-     placeholder.remove();
-     placeholder = null;
-    }
-    r.style.position = ""; r.style.top = ""; r.style.left = ""; r.style.width = ""; r.style.zIndex = ""; r.style.boxShadow = ""; r.style.backgroundColor = ""; r.style.transform = "";
-    r.classList.remove("dragging","touch-grabbed");
-    draggedSetting = null;
+   if(placeholder){
+    box.insertBefore(r, placeholder);
+    placeholder.remove();
+    placeholder = null;
+   }
+   r.style.position = ""; r.style.top = ""; r.style.left = ""; r.style.width = ""; r.style.zIndex = ""; r.style.boxShadow = ""; r.style.backgroundColor = ""; r.style.transform = "";
+   r.classList.remove("dragging","touch-grabbed");
+   draggedSetting = null;
   }
   try{handle.releasePointerCapture(pointerId)}catch(_){ }
   pointerId = null; dragging = false;
@@ -656,7 +438,7 @@ document.getElementById("closeSettings").onclick=()=>{
  const modal=document.getElementById("settingsModal");modal.classList.remove("show");modal.setAttribute("aria-hidden","true");
 };
 document.getElementById("addTaskBtn").onclick=()=>{
- addSettingRow({id:"new"+Date.now(),cat:"📝 その他",category:"other",icon:"📝",name:"新しいクエスト",min:5,allowManualCount:false},document.getElementById("settingsTasks"));
+ addSettingRow({id:"new"+Date.now(),cat:"📝 その他",category:"other",icon:"📝",name:"新しい宿題",min:5},document.getElementById("settingsTasks"));
 };
 document.getElementById("addCategoryBtn").onclick = () => {
   const newValue = "cat_" + Date.now();
@@ -669,16 +451,16 @@ document.getElementById("addCategoryBtn").onclick = () => {
 
 document.getElementById("saveSettings").onclick=()=>{
  if(document.getElementById("categorySettings")) saveCategorySettings();
+ const oldById=Object.fromEntries(data.tasks.map(t=>[t.id,t]));
  const rows=[...document.querySelectorAll("#settingsTasks .setting-row")];
  data.tasks=rows.map((r,i)=>{
-  const id=r.dataset.id||("custom"+Date.now()+i);
+  const id=r.dataset.id||("custom"+Date.now()+i),old=oldById[id];
   const category=r.querySelector(".category-select").value;
   const ci=categoryInfo(category);
   return {
-    id,category,cat:ci.label,icon:ci.icon,
-    name:r.querySelector(".sn").value||"クエスト",
-    min:Math.max(0,Number(r.querySelector(".sm").value)||0),
-    allowManualCount: r.querySelector(".s-manual").checked
+   id,category,cat:ci.label,icon:ci.icon,
+   name:r.querySelector(".sn").value||"宿題",
+   min:Math.max(0,Number(r.querySelector(".sm").value)||0)
   };
  });
  save();
@@ -690,25 +472,12 @@ document.getElementById("saveSettings").onclick=()=>{
 
 document.getElementById("factoryReset").onclick=()=>{
  if(confirm("全データを消去して初期状態に戻します。よろしいですか？")){
-    localStorage.getItem(KEY);
-    localStorage.removeItem(KEY);
-    localStorage.removeItem(KEY+"_categoryChoices");
-    localStorage.removeItem(KEY+"_password");
-    location.reload();
+   localStorage.removeItem(KEY);
+   localStorage.removeItem(KEY+"_categoryChoices");
+   localStorage.removeItem(KEY+"_password");
+   location.reload();
  }
 };
-
-/* --- 0時（深夜）をまたいだ時の自動更新 --- */
-function scheduleMidnightRefresh() {
-  const now = new Date();
-  const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-  const timeUntilMidnight = tomorrow - now;
-  
-  setTimeout(() => {
-    location.reload();
-  }, timeUntilMidnight);
-}
-scheduleMidnightRefresh();
 
 if(data.activeSession){
  const remaining=Math.max(0,data.activeSession.allowedSec-sessionElapsedSec());
@@ -716,9 +485,3 @@ if(data.activeSession){
  else startLiveTimer();
 }
 render();
-
-document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible") {
-    render();
-  }
-});
