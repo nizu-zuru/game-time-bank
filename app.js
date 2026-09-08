@@ -194,30 +194,26 @@ window.updateManualCount = (id, val) => {
   save(); render(); showToast("回数を更新しました");
 };
 
-/* --- 確実に1行にするための完全なリセット＆再構築関数 --- */
+/* --- 周囲の文字を小さく、数字を大きく調整したレイアウト関数 --- */
 function cleanUpOldLayout() {
   const msgEl = document.getElementById("remainMessage");
   if (msgEl) {
-    msgEl.style.display = "none"; // 元のメッセージ枠を非表示
+    msgEl.style.display = "none";
     if (msgEl.parentElement) {
-      // HTML上に直接書かれた「あと」の文字を完全に削除して重複を防ぐ
       Array.from(msgEl.parentElement.childNodes).forEach(node => {
         if (node.nodeType === Node.TEXT_NODE && node.textContent.includes("あと")) {
            node.textContent = node.textContent.replace(/あと/g, "").trim();
         }
       });
-      // 親要素が空になった場合は非表示にして余白を詰める
       if (msgEl.parentElement.tagName === "P" && msgEl.parentElement.textContent.trim() === "") {
          msgEl.parentElement.style.display = "none";
       }
     }
   }
   
-  // 前回のプログラムで追加した余分な要素を削除
   const oldSuffix = document.getElementById("balanceSuffix");
   if (oldSuffix) oldSuffix.remove();
   
-  // 前回のプログラムで崩れてしまった親要素のレイアウト設定を解除
   const balEl = document.getElementById("balance");
   if (balEl && balEl.parentElement) {
      balEl.parentElement.style.display = "";
@@ -233,20 +229,20 @@ function updateBalanceDisplay(bal) {
   const balEl = document.getElementById("balance");
   if (!balEl) return;
   
-  // 余計な要素を全て隠した上で、時間表示エリアの中に直接1行のレイアウトを作り直す
+  // 周囲の文字を小さく（14px）、数字を大きく（48px）調整
   if (bal > 0) {
      balEl.innerHTML = `
        <div style="display:flex; align-items:baseline; justify-content:center; flex-wrap:wrap; margin-bottom: 6px;">
-         <span style="font-size:18px; font-weight:bold; margin-right:4px;">あと</span>
-         <span style="font-size:38px; line-height:1; font-weight:900; margin:0 2px;">${Math.floor(bal)}<span style="font-size:22px; font-weight:bold; margin-left:2px;">分</span></span>
-         <span style="font-size:18px; font-weight:bold; margin-left:4px;">ゲームできるよ！</span>
+         <span style="font-size:14px; font-weight:normal; margin-right:4px; opacity:0.9;">あと</span>
+         <span style="font-size:48px; line-height:1; font-weight:900; margin:0 3px;">${Math.floor(bal)}<span style="font-size:20px; font-weight:bold; margin-left:2px;">分</span></span>
+         <span style="font-size:14px; font-weight:normal; margin-left:4px; opacity:0.9;">ゲームできるよ！</span>
        </div>
      `;
   } else {
      balEl.innerHTML = `
-       <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; margin-bottom: 6px;">
-         <span style="font-size:18px; font-weight:bold;">クエストをして時間をGETしよう！</span>
-         <span style="font-size:38px; line-height:1; font-weight:900;">0<span style="font-size:22px; font-weight:bold; margin-left:2px;">分</span></span>
+       <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; margin-bottom: 6px;">
+         <span style="font-size:14px; font-weight:normal; opacity:0.9;">クエストをして時間をGETしよう！</span>
+         <span style="font-size:48px; line-height:1; font-weight:900;">0<span style="font-size:20px; font-weight:bold; margin-left:2px;">分</span></span>
        </div>
      `;
   }
@@ -256,7 +252,6 @@ function render(){
  document.getElementById("todayLabel").textContent=dateLabel();
  const bal=balance();
  
- // 新しいレイアウト反映関数を呼び出す
  updateBalanceDisplay(bal);
  
  document.getElementById("todayEarned").textContent=mins(earned());
