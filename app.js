@@ -150,7 +150,7 @@ const todayKey=()=>getLocalYMD(new Date());
 
 function day(){const k=todayKey();if(!data.days[k])data.days[k]={done:[]};if(!data.days[k].logs)data.days[k].logs=[];return data.days[k]}
 function save(){localStorage.setItem(KEY,JSON.stringify(data))}
-function mins(n){return `${Math.max(0,Math.round(n))}分`}
+function mins(n){return `${Math.max(0,Math.floor(n))}分`}
 function timeStr(d){return new Date(d).toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit"})}
 function dateLabel(){const d=new Date(),w=["日","月","火","水","木","金","土"][d.getDay()];return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${w}）`}
 
@@ -224,17 +224,17 @@ function cleanUpOldLayout() {
   }
 }
 
+// 【変更後】 font-size:20px; を font-size:36px; に変更し、余白を少し調整
 function updateBalanceDisplay(bal) {
   cleanUpOldLayout();
   const balEl = document.getElementById("balance");
   if (!balEl) return;
   
-  // 周囲の文字を小さく（14px）、数字を大きく（48px）調整
   if (bal > 0) {
      balEl.innerHTML = `
        <div style="display:flex; align-items:baseline; justify-content:center; flex-wrap:wrap; margin-bottom: 6px;">
          <span style="font-size:14px; font-weight:normal; margin-right:4px; opacity:0.9;">あと</span>
-         <span style="font-size:48px; line-height:1; font-weight:900; margin:0 3px;">${Math.floor(bal)}<span style="font-size:20px; font-weight:bold; margin-left:2px;">分</span></span>
+         <span style="font-size:48px; line-height:1; font-weight:900; margin:0 3px;">${Math.floor(bal)}<span style="font-size:36px; font-weight:bold; margin-left:4px;">分</span></span>
          <span style="font-size:14px; font-weight:normal; margin-left:4px; opacity:0.9;">ゲームできるよ！</span>
        </div>
      `;
@@ -242,7 +242,7 @@ function updateBalanceDisplay(bal) {
      balEl.innerHTML = `
        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; margin-bottom: 6px;">
          <span style="font-size:14px; font-weight:normal; opacity:0.9;">クエストをして時間をGETしよう！</span>
-         <span style="font-size:48px; line-height:1; font-weight:900;">0<span style="font-size:20px; font-weight:bold; margin-left:2px;">分</span></span>
+         <span style="font-size:48px; line-height:1; font-weight:900;">0<span style="font-size:36px; font-weight:bold; margin-left:4px;">分</span></span>
        </div>
      `;
   }
