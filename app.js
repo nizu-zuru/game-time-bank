@@ -1,23 +1,27 @@
 const customStyle = document.createElement('style');
 customStyle.textContent = `
-.setting-row{grid-template-columns:34px 130px minmax(90px,1fr) 140px 42px!important;}
-@media(max-width:520px){.setting-row{grid-template-columns:28px 90px minmax(70px,1fr) 120px 38px!important;}}
-.setting-row input.sm, .setting-row input.s-count { padding: 8px 4px; text-align: center; }
+.setting-row{grid-template-columns:34px 115px minmax(70px,1fr) 75px 38px!important; gap:4px;}
+@media(max-width:520px){.setting-row{grid-template-columns:28px 85px minmax(60px,1fr) 65px 34px!important; gap:2px;}}
+.setting-row input.sm { padding: 4px; text-align: center; }
+.setting-row .s-manual { transform: scale(1.2); margin-right: 3px; cursor: pointer; }
 .task.partial { border-color:#8cc3ff; background:#f4f9ff; }
 .task.partial .check { background:#e7f1ff; border-color:#8cc3ff; color:#4b7bec; font-weight:900; }
+.task-count-input { width: 48px; padding: 6px 2px; text-align: center; border: 2px solid #e1e8f0; border-radius: 6px; font-size: 16px; font-weight: 900; color: #4b7bec; background: #fff; transition: 0.2s; }
+.task-count-input:focus { outline: none; border-color: #4b7bec; background: #f4f9ff; }
+.manual-input-wrap { display: flex; align-items: center; gap: 4px; margin: 0 5px 0 10px; }
 `;
 document.head.appendChild(customStyle);
 
 const KEY="gameTimeBankV3";
 const defaultTasks=[
- {id:"music1",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"カレリア",min:30,maxCount:1},
- {id:"music2",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"レッスンシート",min:25,maxCount:1},
- {id:"music3",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"レパートリー",min:5,maxCount:1},
- {id:"music4",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"両手カデンツ",min:10,maxCount:1},
- {id:"music5",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"ロマンティックが止まらない",min:5,maxCount:1},
- {id:"eng1",cat:"💬 英会話",category:"english",icon:"💬",name:"ドリル",min:5,maxCount:1},
- {id:"eng2",cat:"💬 英会話",category:"english",icon:"💬",name:"Talking",min:10,maxCount:1},
- {id:"eng3",cat:"💬 英会話",category:"english",icon:"💬",name:"1ｍチャレ",min:10,maxCount:1}
+ {id:"music1",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"カレリア",min:30,allowManualCount:true},
+ {id:"music2",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"レッスンシート",min:25,allowManualCount:false},
+ {id:"music3",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"レパートリー",min:5,allowManualCount:true},
+ {id:"music4",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"両手カデンツ",min:10,allowManualCount:false},
+ {id:"music5",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"ロマンティックが止まらない",min:5,allowManualCount:false},
+ {id:"eng1",cat:"💬 英会話",category:"english",icon:"💬",name:"ドリル",min:5,allowManualCount:true},
+ {id:"eng2",cat:"💬 英会話",category:"english",icon:"💬",name:"Talking",min:10,allowManualCount:false},
+ {id:"eng3",cat:"💬 英会話",category:"english",icon:"💬",name:"1ｍチャレ",min:10,allowManualCount:true}
 ];
 
 let data=JSON.parse(localStorage.getItem(KEY)||"null")||{tasks:defaultTasks,days:{},activeSession:null};
@@ -121,9 +125,8 @@ function dateLabel(){const d=new Date(),w=["日","月","火","水","木","金","
 
 function earnedFor(d){
  return data.tasks.reduce((s,t) => {
-   const maxCount = t.maxCount || 1;
    const count = (d.done || []).filter(x => x === t.id).length;
-   const validCount = Math.min(count, maxCount);
+   const validCount = t.allowManualCount ? count : Math.min(count, 1);
    return s + (validCount * Number(t.min));
  }, 0);
 }
@@ -152,6 +155,15 @@ function balance(){
 }
 function showToast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");clearTimeout(showToast.t);showToast.t=setTimeout(()=>t.classList.remove("show"),1800)}
 
+// 回数入力枠の値が変わったときの処理（グローバル関数）
+window.updateManualCount = (id, val) => {
+  let num = parseInt(val) || 0;
+  if (num < 0) num = 0;
+  day().done = day().done.filter(x => x !== id); // 一旦リセット
+  for(let i=0; i<num; i++) day().done.push(id);  // 入力された回数分追加
+  save(); render(); showToast("回数を更新しました");
+};
+
 function render(){
  document.getElementById("todayLabel").textContent=dateLabel();
  const bal=balance();
@@ -163,7 +175,7 @@ function render(){
 
  const completedTasks = data.tasks.filter(t => {
    const count = day().done.filter(x => x === t.id).length;
-   return count >= (t.maxCount || 1);
+   return t.allowManualCount ? count > 0 : count >= 1;
  }).length;
 
  document.getElementById("taskDoneCount").textContent=completedTasks;
@@ -177,36 +189,44 @@ function render(){
  const list=document.getElementById("taskList");list.innerHTML="";
  
  data.tasks.forEach(t=>{
-  const maxCount = t.maxCount || 1;
   const count = day().done.filter(x => x === t.id).length;
-  const done = count >= maxCount;
+  const done = t.allowManualCount ? count > 0 : count >= 1;
   
   const cc=categoryClass(t.category);
   const el=document.createElement("div");
-  el.className="task cat-"+cc+(done?" done":"")+(count>0 && !done?" partial":"");
+  el.className="task cat-"+cc+(done?" done":"");
   
-  let checkHtml = "";
-  if(maxCount > 1) {
-    checkHtml = done ? "✓" : (count > 0 ? `<span style="font-size:16px">${count}/${maxCount}</span>` : "");
-  } else {
-    checkHtml = done ? "✓" : "";
+  const checkHtml = done ? "✓" : "";
+
+  // 入力枠がONの場合は入力欄を表示
+  let manualHtml = "";
+  let pointsHtml = `＋${t.min}分`;
+
+  if (t.allowManualCount) {
+    manualHtml = `<div class="manual-input-wrap" onclick="event.stopPropagation()">
+      <input type="number" class="task-count-input" value="${count}" min="0" onchange="updateManualCount('${t.id}', this.value)">
+      <span style="font-size:12px;font-weight:bold;color:#68778c;">回</span>
+    </div>`;
+    pointsHtml = `＋${t.min}分<br><span style="font-size:10px;color:#8793a5;font-weight:normal;">/回</span>`;
   }
 
-  let pointsHtml = maxCount > 1 ? `＋${t.min}分<br><span style="font-size:11px;color:#8793a5;font-weight:normal;letter-spacing:-0.5px;">最大${t.min * maxCount}分</span>` : `＋${t.min}分`;
-
-  el.innerHTML=`<div class="task-icon task-cat ${cc}">${esc(t.icon||"📝")}</div><div class="check" aria-label="完了">${checkHtml}</div><div><div class="task-name">${esc(t.name)}</div><div class="task-cat-text">${esc(taskCategoryText(t))}</div></div><div class="points" style="text-align:right;line-height:1.2">${pointsHtml}</div>`;
+  el.innerHTML=`<div class="task-icon task-cat ${cc}">${esc(t.icon||"📝")}</div><div class="check" aria-label="完了">${checkHtml}</div><div style="flex-grow:1;"><div class="task-name">${esc(t.name)}</div><div class="task-cat-text">${esc(taskCategoryText(t))}</div></div>${manualHtml}<div class="points" style="text-align:right;line-height:1.2;min-width:45px;">${pointsHtml}</div>`;
   
-  el.onclick=()=>{
-    if(done){
-      day().done=day().done.filter(x=>x!==t.id);
-      showToast("チェックを取り消しました");
-    }else{
+  el.onclick=(e)=>{
+    if(e.target.tagName === 'INPUT') return; // 入力欄をタッチした場合は無効
+    
+    if(t.allowManualCount){
+      // 回数入力がONのクエストをタッチした場合は回数を+1する
       day().done.push(t.id);
-      const newCount = count + 1;
-      if(newCount >= maxCount) {
-         showToast(`🎉 クエスト完了！ ＋${t.min}分 (計${t.min * maxCount}分)`);
-      } else {
-         showToast(`🎉 ＋${t.min}分 GET！ (${newCount}/${maxCount}回)`);
+      showToast(`🎉 ＋${t.min}分 GET！ (計${count+1}回)`);
+    }else{
+      // 従来のON/OFFクエスト
+      if(done){
+        day().done=day().done.filter(x=>x!==t.id);
+        showToast("チェックを取り消しました");
+      }else{
+        day().done.push(t.id);
+        showToast(`🎉 クエスト完了！ ＋${t.min}分`);
       }
     }
     save();render();
@@ -378,8 +398,7 @@ function renderMonthlyReport() {
     Object.keys(countMap).forEach(taskId => {
        const t = data.tasks.find(x => x.id === taskId);
        if (t) {
-         const maxCount = t.maxCount || 1;
-         const validCount = Math.min(countMap[taskId], maxCount);
+         const validCount = t.allowManualCount ? countMap[taskId] : Math.min(countMap[taskId], 1);
          const earnedMin = validCount * Number(t.min);
          
          monthly[month].total += earnedMin;
@@ -418,14 +437,13 @@ let draggedSetting=null;
 function addSettingRow(t,box){
  const r=document.createElement("div");r.className="setting-row";r.dataset.id=t.id;
  const cat=t.category||"other";
- const maxCount = t.maxCount || 1;
  
  r.innerHTML=`<div class="drag-handle" title="上下にスワイプして並べ替え">☰</div>
  <select class="category-select">${categoryChoices.map(c=>`<option value="${c.value}" ${c.value===cat?"selected":""}>${esc(categoryLabel(c.value))}</option>`).join("")}</select>
  <input class="sn" value="${esc(t.name)}">
- <div style="display:flex;align-items:center;gap:3px;font-size:12px;color:#68778c;justify-content:center;">
-   <input class="sm" type="number" min="0" value="${t.min}" style="width:45px">分×
-   <input class="s-count" type="number" min="1" max="99" value="${maxCount}" style="width:40px">回
+ <div style="display:flex;flex-direction:column;gap:4px;font-size:10px;align-items:center;justify-content:center;color:#68778c;">
+   <div><input class="sm" type="number" min="0" value="${t.min}" style="width:40px">分</div>
+   <label style="display:flex;align-items:center;"><input type="checkbox" class="s-manual" ${t.allowManualCount?'checked':''}> 回数入力枠</label>
  </div>
  <button class="remove-task">✕</button>`;
  r.querySelector(".remove-task").onclick=()=>r.remove();
@@ -509,7 +527,7 @@ document.getElementById("closeSettings").onclick=()=>{
  const modal=document.getElementById("settingsModal");modal.classList.remove("show");modal.setAttribute("aria-hidden","true");
 };
 document.getElementById("addTaskBtn").onclick=()=>{
- addSettingRow({id:"new"+Date.now(),cat:"📝 その他",category:"other",icon:"📝",name:"新しいクエスト",min:5,maxCount:1},document.getElementById("settingsTasks"));
+ addSettingRow({id:"new"+Date.now(),cat:"📝 その他",category:"other",icon:"📝",name:"新しいクエスト",min:5,allowManualCount:false},document.getElementById("settingsTasks"));
 };
 document.getElementById("addCategoryBtn").onclick = () => {
   const newValue = "cat_" + Date.now();
@@ -525,14 +543,14 @@ document.getElementById("saveSettings").onclick=()=>{
  const oldById=Object.fromEntries(data.tasks.map(t=>[t.id,t]));
  const rows=[...document.querySelectorAll("#settingsTasks .setting-row")];
  data.tasks=rows.map((r,i)=>{
-  const id=r.dataset.id||("custom"+Date.now()+i),old=oldById[id];
+  const id=r.dataset.id||("custom"+Date.now()+i);
   const category=r.querySelector(".category-select").value;
   const ci=categoryInfo(category);
   return {
    id,category,cat:ci.label,icon:ci.icon,
    name:r.querySelector(".sn").value||"クエスト",
    min:Math.max(0,Number(r.querySelector(".sm").value)||0),
-   maxCount:Math.max(1,Number(r.querySelector(".s-count").value)||1)
+   allowManualCount: r.querySelector(".s-manual").checked
   };
  });
  save();
