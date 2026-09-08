@@ -194,88 +194,71 @@ window.updateManualCount = (id, val) => {
   save(); render(); showToast("回数を更新しました");
 };
 
-/* --- 「あと 〇〇分 ゲームできるよ！」を1行（横並び）にするレイアウト調整 --- */
-function fixOneLineBalanceLayout() {
-  const bal = document.getElementById("balance");
-  const msg = document.getElementById("remainMessage");
-  if (!bal || !msg) return;
-
-  const parent = bal.parentElement;
-  if (!parent) return;
-
-  // 親要素をフレックスボックスにして横並び化
-  parent.style.display = "flex";
-  parent.style.flexDirection = "row";
-  parent.style.flexWrap = "wrap";
-  parent.style.justifyContent = "center";
-  parent.style.alignItems = "baseline"; // 文字の下端を揃える
-
-  const currentBalance = balance();
-
-  // 「ゲームできるよ！」専用の要素を作成
-  let suffix = document.getElementById("balanceSuffix");
-  if (!suffix) {
-    suffix = document.createElement("div");
-    suffix.id = "balanceSuffix";
-    parent.appendChild(suffix);
-  }
-
-  // 残り時間がある場合とない場合でテキストを変更
-  if (currentBalance > 0) {
-    msg.textContent = "あと";
-    msg.style.width = "auto";
-    suffix.textContent = "ゲームできるよ！";
-    suffix.style.display = "block";
-  } else {
-    msg.textContent = "クエストをして時間をGETしよう！";
-    msg.style.width = "100%";
-    msg.style.textAlign = "center";
-    suffix.style.display = "none";
-  }
-
-  // 1番目: 「あと」
-  msg.style.order = "1";
-  msg.style.fontSize = "18px";
-  msg.style.margin = "0 4px 0 0";
-  msg.style.fontWeight = "bold";
-
-  // 2番目: 数字（360分）
-  bal.style.order = "2";
-  bal.style.fontSize = "38px"; 
-  bal.style.margin = "0";
-  bal.style.lineHeight = "1";
-
-  // 3番目: 「ゲームできるよ！」
-  suffix.style.order = "3";
-  suffix.style.fontSize = "18px";
-  suffix.style.margin = "0 0 0 4px";
-  suffix.style.fontWeight = "bold";
-
-  // 単位の「分」のサイズを少し調整
-  const span = bal.querySelector("span");
-  if (span) {
-    span.style.fontSize = "22px";
-    span.style.marginLeft = "2px";
-  }
-
-  // 今日GETなどのサブ情報はすべて下の行に押し出す
-  for (let i = 0; i < parent.children.length; i++) {
-    const child = parent.children[i];
-    if (child !== bal && child !== msg && child !== suffix) {
-      child.style.order = "4";
-      child.style.width = "100%";
-      child.style.marginTop = "12px";
-      child.style.textAlign = "center";
+/* --- 確実に1行にするための完全なリセット＆再構築関数 --- */
+function cleanUpOldLayout() {
+  const msgEl = document.getElementById("remainMessage");
+  if (msgEl) {
+    msgEl.style.display = "none"; // 元のメッセージ枠を非表示
+    if (msgEl.parentElement) {
+      // HTML上に直接書かれた「あと」の文字を完全に削除して重複を防ぐ
+      Array.from(msgEl.parentElement.childNodes).forEach(node => {
+        if (node.nodeType === Node.TEXT_NODE && node.textContent.includes("あと")) {
+           node.textContent = node.textContent.replace(/あと/g, "").trim();
+        }
+      });
+      // 親要素が空になった場合は非表示にして余白を詰める
+      if (msgEl.parentElement.tagName === "P" && msgEl.parentElement.textContent.trim() === "") {
+         msgEl.parentElement.style.display = "none";
+      }
     }
+  }
+  
+  // 前回のプログラムで追加した余分な要素を削除
+  const oldSuffix = document.getElementById("balanceSuffix");
+  if (oldSuffix) oldSuffix.remove();
+  
+  // 前回のプログラムで崩れてしまった親要素のレイアウト設定を解除
+  const balEl = document.getElementById("balance");
+  if (balEl && balEl.parentElement) {
+     balEl.parentElement.style.display = "";
+     balEl.parentElement.style.flexDirection = "";
+     balEl.parentElement.style.flexWrap = "";
+     balEl.parentElement.style.justifyContent = "";
+     balEl.parentElement.style.alignItems = "";
+  }
+}
+
+function updateBalanceDisplay(bal) {
+  cleanUpOldLayout();
+  const balEl = document.getElementById("balance");
+  if (!balEl) return;
+  
+  // 余計な要素を全て隠した上で、時間表示エリアの中に直接1行のレイアウトを作り直す
+  if (bal > 0) {
+     balEl.innerHTML = `
+       <div style="display:flex; align-items:baseline; justify-content:center; flex-wrap:wrap; margin-bottom: 6px;">
+         <span style="font-size:18px; font-weight:bold; margin-right:4px;">あと</span>
+         <span style="font-size:38px; line-height:1; font-weight:900; margin:0 2px;">${Math.floor(bal)}<span style="font-size:22px; font-weight:bold; margin-left:2px;">分</span></span>
+         <span style="font-size:18px; font-weight:bold; margin-left:4px;">ゲームできるよ！</span>
+       </div>
+     `;
+  } else {
+     balEl.innerHTML = `
+       <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; margin-bottom: 6px;">
+         <span style="font-size:18px; font-weight:bold;">クエストをして時間をGETしよう！</span>
+         <span style="font-size:38px; line-height:1; font-weight:900;">0<span style="font-size:22px; font-weight:bold; margin-left:2px;">分</span></span>
+       </div>
+     `;
   }
 }
 
 function render(){
  document.getElementById("todayLabel").textContent=dateLabel();
  const bal=balance();
- document.getElementById("balance").innerHTML=`${Math.floor(bal)}<span>分</span>`;
- // テキストは上の fixOneLineBalanceLayout で上書きされるため空でOKですが念のためベースを入れておきます
- document.getElementById("remainMessage").textContent=bal>0?"":"クエストをして時間をGETしよう！";
+ 
+ // 新しいレイアウト反映関数を呼び出す
+ updateBalanceDisplay(bal);
+ 
  document.getElementById("todayEarned").textContent=mins(earned());
  document.getElementById("todayUsed").textContent=mins(used()+activeElapsedMinutes());
  document.getElementById("studyTotal").textContent=earned();
@@ -347,7 +330,6 @@ function render(){
  });
  renderWeek();
  renderTimer();
- fixOneLineBalanceLayout();
 }
 
 function renderWeek(){
@@ -408,8 +390,10 @@ function startLiveTimer(){
   if(!data.activeSession){clearInterval(timerInterval);return}
   const remaining=Math.max(0,data.activeSession.allowedSec-sessionElapsedSec());
   document.getElementById("timer").textContent=timerText(remaining);
+  
   const bal=balance();
-  document.getElementById("balance").innerHTML=`${Math.floor(bal)}<span>分</span>`;
+  updateBalanceDisplay(bal);
+  
   document.getElementById("todayUsed").textContent=mins(used()+activeElapsedMinutes());
   document.getElementById("sumUse").textContent=`−${Math.round(used()+activeElapsedMinutes())}分`;
   document.getElementById("summaryBalance").textContent=mins(bal);
