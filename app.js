@@ -1,13 +1,23 @@
+const customStyle = document.createElement('style');
+customStyle.textContent = `
+.setting-row{grid-template-columns:34px 130px minmax(90px,1fr) 140px 42px!important;}
+@media(max-width:520px){.setting-row{grid-template-columns:28px 90px minmax(70px,1fr) 120px 38px!important;}}
+.setting-row input.sm, .setting-row input.s-count { padding: 8px 4px; text-align: center; }
+.task.partial { border-color:#8cc3ff; background:#f4f9ff; }
+.task.partial .check { background:#e7f1ff; border-color:#8cc3ff; color:#4b7bec; font-weight:900; }
+`;
+document.head.appendChild(customStyle);
+
 const KEY="gameTimeBankV3";
 const defaultTasks=[
- {id:"music1",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"カレリア",min:30},
- {id:"music2",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"レッスンシート",min:25},
- {id:"music3",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"レパートリー",min:5},
- {id:"music4",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"両手カデンツ",min:10},
- {id:"music5",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"ロマンティックが止まらない",min:5},
- {id:"eng1",cat:"💬 英会話",category:"english",icon:"💬",name:"ドリル",min:5},
- {id:"eng2",cat:"💬 英会話",category:"english",icon:"💬",name:"Talking",min:10},
- {id:"eng3",cat:"💬 英会話",category:"english",icon:"💬",name:"1ｍチャレ",min:10}
+ {id:"music1",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"カレリア",min:30,maxCount:1},
+ {id:"music2",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"レッスンシート",min:25,maxCount:1},
+ {id:"music3",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"レパートリー",min:5,maxCount:1},
+ {id:"music4",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"両手カデンツ",min:10,maxCount:1},
+ {id:"music5",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"ロマンティックが止まらない",min:5,maxCount:1},
+ {id:"eng1",cat:"💬 英会話",category:"english",icon:"💬",name:"ドリル",min:5,maxCount:1},
+ {id:"eng2",cat:"💬 英会話",category:"english",icon:"💬",name:"Talking",min:10,maxCount:1},
+ {id:"eng3",cat:"💬 英会話",category:"english",icon:"💬",name:"1ｍチャレ",min:10,maxCount:1}
 ];
 
 let data=JSON.parse(localStorage.getItem(KEY)||"null")||{tasks:defaultTasks,days:{},activeSession:null};
@@ -98,19 +108,26 @@ function saveCategorySettings(){
 
 let timerInterval=null;
 
-// ----- 修正箇所1：ローカル時間（日本時間）で今日の日付を取得する関数を追加 -----
 function getLocalYMD(d) {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 const todayKey=()=>getLocalYMD(new Date());
-// -------------------------------------------------------------------------
 
-function day(){const k=todayKey();if(!data.days[k])data.days[k]={done:[],logs:[]};return data.days[k]}
+function day(){const k=todayKey();if(!data.days[k])data.days[k]={done:[]};if(!data.days[k].logs)data.days[k].logs=[];return data.days[k]}
 function save(){localStorage.setItem(KEY,JSON.stringify(data))}
 function mins(n){return `${Math.max(0,Math.round(n))}分`}
 function timeStr(d){return new Date(d).toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit"})}
 function dateLabel(){const d=new Date(),w=["日","月","火","水","木","金","土"][d.getDay()];return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${w}）`}
-function earnedFor(d){return data.tasks.reduce((s,t)=>s+(d.done?.includes(t.id)?Number(t.min):0),0)}
+
+function earnedFor(d){
+ return data.tasks.reduce((s,t) => {
+   const maxCount = t.maxCount || 1;
+   const count = (d.done || []).filter(x => x === t.id).length;
+   const validCount = Math.min(count, maxCount);
+   return s + (validCount * Number(t.min));
+ }, 0);
+}
+
 function earned(){return earnedFor(day())}
 function used(){return day().logs.reduce((s,l)=>s+Number(l.min),0)}
 function carry(){
@@ -143,22 +160,60 @@ function render(){
  document.getElementById("todayEarned").textContent=mins(earned());
  document.getElementById("todayUsed").textContent=mins(used()+activeElapsedMinutes());
  document.getElementById("studyTotal").textContent=earned();
- document.getElementById("taskDoneCount").textContent=day().done.length;
+
+ const completedTasks = data.tasks.filter(t => {
+   const count = day().done.filter(x => x === t.id).length;
+   return count >= (t.maxCount || 1);
+ }).length;
+
+ document.getElementById("taskDoneCount").textContent=completedTasks;
  document.getElementById("taskTotalCount").textContent=data.tasks.length;
- const pct=data.tasks.length?Math.min(100,day().done.length/data.tasks.length*100):0;
+ const pct=data.tasks.length?Math.min(100,completedTasks/data.tasks.length*100):0;
  document.getElementById("studyProgress").style.width=pct+"%";
  document.getElementById("carry").textContent=mins(carry());
  document.getElementById("sumEarn").textContent=`＋${earned()}分`;
  document.getElementById("sumUse").textContent=`−${Math.round(used()+activeElapsedMinutes())}分`;
  document.getElementById("summaryBalance").textContent=mins(bal);
  const list=document.getElementById("taskList");list.innerHTML="";
+ 
  data.tasks.forEach(t=>{
-  const done=day().done.includes(t.id),el=document.createElement("div"),cc=categoryClass(t.category);
-  el.className="task cat-"+cc+(done?" done":"");
-  el.innerHTML=`<div class="task-icon task-cat ${cc}">${esc(t.icon||"📝")}</div><div class="check" aria-label="完了">${done?"✓":""}</div><div><div class="task-name">${esc(t.name)}</div><div class="task-cat-text">${esc(taskCategoryText(t))}</div></div><div class="points">＋${t.min}分</div>`;
-  el.onclick=()=>{if(done){day().done=day().done.filter(x=>x!==t.id);showToast("チェックを取り消しました")}else{day().done.push(t.id);showToast(`🎉 ＋${t.min}分 GET！`)}save();render()};
+  const maxCount = t.maxCount || 1;
+  const count = day().done.filter(x => x === t.id).length;
+  const done = count >= maxCount;
+  
+  const cc=categoryClass(t.category);
+  const el=document.createElement("div");
+  el.className="task cat-"+cc+(done?" done":"")+(count>0 && !done?" partial":"");
+  
+  let checkHtml = "";
+  if(maxCount > 1) {
+    checkHtml = done ? "✓" : (count > 0 ? `<span style="font-size:16px">${count}/${maxCount}</span>` : "");
+  } else {
+    checkHtml = done ? "✓" : "";
+  }
+
+  let pointsHtml = maxCount > 1 ? `＋${t.min}分<br><span style="font-size:11px;color:#8793a5;font-weight:normal;letter-spacing:-0.5px;">最大${t.min * maxCount}分</span>` : `＋${t.min}分`;
+
+  el.innerHTML=`<div class="task-icon task-cat ${cc}">${esc(t.icon||"📝")}</div><div class="check" aria-label="完了">${checkHtml}</div><div><div class="task-name">${esc(t.name)}</div><div class="task-cat-text">${esc(taskCategoryText(t))}</div></div><div class="points" style="text-align:right;line-height:1.2">${pointsHtml}</div>`;
+  
+  el.onclick=()=>{
+    if(done){
+      day().done=day().done.filter(x=>x!==t.id);
+      showToast("チェックを取り消しました");
+    }else{
+      day().done.push(t.id);
+      const newCount = count + 1;
+      if(newCount >= maxCount) {
+         showToast(`🎉 クエスト完了！ ＋${t.min}分 (計${t.min * maxCount}分)`);
+      } else {
+         showToast(`🎉 ＋${t.min}分 GET！ (${newCount}/${maxCount}回)`);
+      }
+    }
+    save();render();
+  };
   list.appendChild(el);
  });
+
  const logs=document.getElementById("logs");logs.innerHTML="";
  if(!day().logs.length)logs.innerHTML='<div class="empty">まだゲーム記録はありません</div>';
  else [...day().logs].reverse().forEach(l=>{
@@ -174,11 +229,7 @@ function renderWeek(){
  const now=new Date(),labels=["日","月","火","水","木","金","土"],rows=[];
  for(let i=6;i>=0;i--){
   const d=new Date(now);d.setDate(now.getDate()-i);
-  
-  // ----- 修正箇所2：週間グラフ処理もローカル時間を使用する -----
   const k=getLocalYMD(d),dd=data.days[k]||{done:[]};
-  // --------------------------------------------------------
-  
   rows.push({k,label:labels[d.getDay()],value:earnedFor(dd),today:i===0});
  }
  const max=Math.max(30,...rows.map(x=>x.value));
@@ -244,9 +295,8 @@ function startLiveTimer(){
 function finishTimer(auto=false){
  const s=data.activeSession;if(!s)return;
  const elapsedSec=sessionElapsedSec();
- // 秒単位を正確に考慮し、実際に経過した秒数をそのまま分数に換算（切り上げ）して消費する
  const useMin = Math.min(s.allowedSec/60, Math.max(1/60, elapsedSec/60));
- const useRounded = Math.round(useMin * 10) / 10; // 小数点第1位まで正確に記録
+ const useRounded = Math.round(useMin * 10) / 10;
  const start=s.startAt,end=Date.now();
  data.activeSession=null;
  if(useMin>0){
@@ -320,11 +370,20 @@ function renderMonthlyReport() {
     const month = date.slice(0, 7);
     if (!monthly[month]) monthly[month] = { total: 0, categories: {} };
     
+    const countMap = {};
     (dayData.done || []).forEach(taskId => {
+       countMap[taskId] = (countMap[taskId] || 0) + 1;
+    });
+
+    Object.keys(countMap).forEach(taskId => {
        const t = data.tasks.find(x => x.id === taskId);
        if (t) {
-         monthly[month].total += Number(t.min);
-         monthly[month].categories[t.category] = (monthly[month].categories[t.category] || 0) + Number(t.min);
+         const maxCount = t.maxCount || 1;
+         const validCount = Math.min(countMap[taskId], maxCount);
+         const earnedMin = validCount * Number(t.min);
+         
+         monthly[month].total += earnedMin;
+         monthly[month].categories[t.category] = (monthly[month].categories[t.category] || 0) + earnedMin;
        }
     });
   }
@@ -359,11 +418,15 @@ let draggedSetting=null;
 function addSettingRow(t,box){
  const r=document.createElement("div");r.className="setting-row";r.dataset.id=t.id;
  const cat=t.category||"other";
+ const maxCount = t.maxCount || 1;
  
  r.innerHTML=`<div class="drag-handle" title="上下にスワイプして並べ替え">☰</div>
  <select class="category-select">${categoryChoices.map(c=>`<option value="${c.value}" ${c.value===cat?"selected":""}>${esc(categoryLabel(c.value))}</option>`).join("")}</select>
  <input class="sn" value="${esc(t.name)}">
- <input class="sm" type="number" min="0" value="${t.min}">
+ <div style="display:flex;align-items:center;gap:3px;font-size:12px;color:#68778c;justify-content:center;">
+   <input class="sm" type="number" min="0" value="${t.min}" style="width:45px">分×
+   <input class="s-count" type="number" min="1" max="99" value="${maxCount}" style="width:40px">回
+ </div>
  <button class="remove-task">✕</button>`;
  r.querySelector(".remove-task").onclick=()=>r.remove();
  
@@ -446,7 +509,7 @@ document.getElementById("closeSettings").onclick=()=>{
  const modal=document.getElementById("settingsModal");modal.classList.remove("show");modal.setAttribute("aria-hidden","true");
 };
 document.getElementById("addTaskBtn").onclick=()=>{
- addSettingRow({id:"new"+Date.now(),cat:"📝 その他",category:"other",icon:"📝",name:"新しいクエスト",min:5},document.getElementById("settingsTasks"));
+ addSettingRow({id:"new"+Date.now(),cat:"📝 その他",category:"other",icon:"📝",name:"新しいクエスト",min:5,maxCount:1},document.getElementById("settingsTasks"));
 };
 document.getElementById("addCategoryBtn").onclick = () => {
   const newValue = "cat_" + Date.now();
@@ -468,7 +531,8 @@ document.getElementById("saveSettings").onclick=()=>{
   return {
    id,category,cat:ci.label,icon:ci.icon,
    name:r.querySelector(".sn").value||"クエスト",
-   min:Math.max(0,Number(r.querySelector(".sm").value)||0)
+   min:Math.max(0,Number(r.querySelector(".sm").value)||0),
+   maxCount:Math.max(1,Number(r.querySelector(".s-count").value)||1)
   };
  });
  save();
@@ -495,10 +559,8 @@ if(data.activeSession){
 }
 render();
 
-// ----- 修正箇所3：スリープ復帰時などの画面自動更新処理を追加 -----
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") {
     render();
   }
 });
-// --------------------------------------------------------
