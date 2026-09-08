@@ -1,7 +1,6 @@
 const KEY="gameTimeBankV3";
 const defaultTasks=[
- {id:"study1",cat:"🏫 学校",category:"study",icon:"🏫",name:"音・計算・リ",min:10},
- {id:"music1",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"カルレア",min:5},
+ {id:"music1",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"カルレア",min:30},
  {id:"music2",cat:"🎹 音楽教室",category:"music",icon:"🎵",name:"レッスンシート",min:25},
  {id:"music3",cat:"🎹 音楽教室",category:"music",icon:"🎼",name:"レパートリー",min:5},
  {id:"music4",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"両手カデンツ",min:10},
@@ -21,7 +20,7 @@ if(!categoryChoices || categoryChoices.length === 0) {
   categoryChoices = [
    {value:"music",label:"🎹 音楽教室",icon:"🎹"},
    {value:"english",label:"💬 英会話",icon:"💬"},
-   {value:"study",label:"🏫 学校",icon:"🏫"},
+   {value:"study",label:"📚 勉強・宿題",icon:"📚"},
    {value:"other",label:"📝 その他",icon:"📝"}
   ];
 }
