@@ -229,7 +229,6 @@ function updateBalanceDisplay(bal) {
   const balEl = document.getElementById("balance");
   if (!balEl) return;
   
-  // 周囲の文字を小さく（14px）、数字を大きく（48px）調整
   if (bal > 0) {
      balEl.innerHTML = `
        <div style="display:flex; align-items:baseline; justify-content:center; flex-wrap:wrap; margin-bottom: 6px;">
@@ -245,6 +244,12 @@ function updateBalanceDisplay(bal) {
          <span style="font-size:48px; line-height:1; font-weight:900;">0<span style="font-size:20px; font-weight:bold; margin-left:2px;">分</span></span>
        </div>
      `;
+  }
+
+  const sticky = document.getElementById("stickyTimer");
+  if (sticky) {
+    sticky.style.display = "block";
+    sticky.textContent = `残り ${Math.floor(bal)}分`;
   }
 }
 

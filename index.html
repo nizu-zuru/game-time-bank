@@ -14,14 +14,18 @@
 </head>
 <body>
 <div class="app">
-  <header class="topbar">
-    <div>
-      <div class="eyebrow">GAME TIME BANK</div>
-      <h1>🎮 まもるのゲーム時間BANK</h1>
-      <div id="todayLabel" class="date"></div>
-    </div>
+<header class="topbar">
+  <div>
+    <div class="eyebrow">GAME TIME BANK</div>
+    <h1>🎮 まもるのゲーム時間BANK</h1>
+    <div id="todayLabel" class="date"></div>
+  </div>
+  <div style="display:flex; align-items:center; gap:8px;">
+    <!-- 追加した残り時間表示 -->
+    <div id="stickyTimer" style="font-weight:900; color:#4b7bec; font-size:14px; background:#eef2f7; padding:6px 10px; border-radius:10px; display:none;">残り 0分</div>
     <button class="icon-btn" id="settingsBtn" aria-label="設定">⚙️</button>
-  </header>
+  </div>
+</header>
 
   <main>
     <section class="balance-card">
