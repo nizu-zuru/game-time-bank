@@ -62,14 +62,10 @@
         <button class="big-btn danger" id="finishBtn" disabled>■ ゲーム終了</button>
       </div>
       <div class="quick-use">
-        <div class="quick-title">ペナルティ（マイナスポイント）</div>
-        <div class="quick-grid">
-          <button data-min="5">−5分</button>
-          <button data-min="10">−10分</button>
-          <button data-min="15">−15分</button>
-          <button data-min="20">−20分</button>
-          <button data-min="30">−30分</button>
-          <button data-min="60">−60分</button>
+        <div class="quick-title">直接入力</div>
+        <div class="direct-input-area">
+          <input type="number" id="directTimeInput" class="big-input" placeholder="例: -15, 10 (分)" step="5">
+          <button class="big-btn primary" id="applyDirectTimeBtn" style="width: auto; padding: 0 20px;">反映</button>
         </div>
       </div>
     </section>

@@ -441,12 +441,42 @@ function finishTimer(auto=false){
 
 document.getElementById("startBtn").onclick=startTimer;
 document.getElementById("finishBtn").onclick=()=>finishTimer(false);
-document.querySelectorAll("[data-min]").forEach(b=>b.onclick=()=>{
- if(data.activeSession){alert("タイマー中は直接消費できません。ゲーム終了を押すかお待ちください。");return}
- const n=Number(b.dataset.min),bal=Math.floor(balance());
- if(bal<n){alert(`残りは${bal}分です。`);return}
- day().logs.push({start:null,end:null,min:n,remain:bal-n,kind:"直接入力"});save();render();showToast(`🎮 −${n}分 使用`);
-});
+document.getElementById("applyDirectTimeBtn").onclick = () => {
+  if (data.activeSession) {
+    alert("タイマー中は直接入力できません。ゲーム終了を押すかお待ちください。");
+    return;
+  }
+  
+  const val = document.getElementById("directTimeInput").value;
+  const inputMin = parseInt(val, 10);
+  
+  if (isNaN(inputMin) || inputMin === 0) {
+    alert("0以外の数値を入力してください。");
+    return;
+  }
+
+  const bal = Math.floor(balance());
+  
+  if (inputMin < 0) {
+    // ペナルティ等で時間を減らす場合（例: -10）
+    const deduct = Math.abs(inputMin);
+    if (bal < deduct) {
+      alert(`残高（${bal}分）が足りません。`);
+      return;
+    }
+    day().logs.push({start:null, end:null, min: deduct, remain: bal - deduct, kind: "直接入力"});
+    showToast(`🎮 ${inputMin}分 反映`);
+  } else {
+    // ボーナス等で時間を増やす場合（例: 10）
+    // ログの「使用時間(min)」をマイナス値で記録することで、残高を加算させます
+    day().logs.push({start:null, end:null, min: -inputMin, remain: bal + inputMin, kind: "直接入力"});
+    showToast(`🎉 ＋${inputMin}分 反映`);
+  }
+  
+  save();
+  render();
+  document.getElementById("directTimeInput").value = "";
+};
 
 /* --- 誤操作防止対策：リセットボタンを最下部領域へ移動＆2段階確認 --- */
 function setupRelocatedResetButtons() {
