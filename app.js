@@ -1,7 +1,7 @@
 const customStyle = document.createElement('style');
 customStyle.textContent = `
-.setting-row{grid-template-columns:34px 115px minmax(70px,1fr) 65px 38px!important; gap:4px;}
-@media(max-width:520px){.setting-row{grid-template-columns:28px 85px minmax(60px,1fr) 55px 34px!important; gap:2px;}}
+.setting-row{grid-template-columns:30px 110px minmax(50px,1fr) auto 34px!important; gap:4px; align-items:center;}
+@media(max-width:520px){.setting-row{grid-template-columns:24px 80px minmax(40px,1fr) auto 28px!important; gap:2px;}}
 .setting-row input.sm { padding: 4px; text-align: center; }
 .setting-row .s-manual { transform: scale(1.1); margin-right: 2px; cursor: pointer; }
 .task.partial { border-color:#8cc3ff; background:#f4f9ff; }
@@ -203,6 +203,7 @@ function render(){
     rightAreaHtml = `<div class="manual-input-wrap" onclick="event.stopPropagation()">
       <input type="number" class="task-count-input" value="${count}" min="0" onchange="updateManualCount('${t.id}', this.value)">
       <span style="font-size:12px;font-weight:bold;color:#68778c;">回</span>
+      <span style="font-size:12px;font-weight:bold;color:#68778c;margin-left:2px;">×${t.min}分</span>
     </div>`;
   } else {
     rightAreaHtml = `<div class="points" style="text-align:right;line-height:1.2;">＋${t.min}分</div>`;
@@ -437,9 +438,9 @@ function addSettingRow(t,box){
  r.innerHTML=`<div class="drag-handle" title="上下にスワイプして並べ替え">☰</div>
  <select class="category-select">${categoryChoices.map(c=>`<option value="${c.value}" ${c.value===cat?"selected":""}>${esc(categoryLabel(c.value))}</option>`).join("")}</select>
  <input class="sn" value="${esc(t.name)}">
- <div style="display:flex;flex-direction:column;gap:2px;font-size:10px;align-items:center;justify-content:center;color:#68778c;">
-   <div><input class="sm" type="number" min="0" value="${t.min}" style="width:40px">分</div>
-   <label style="display:flex;align-items:center;white-space:nowrap;"><input type="checkbox" class="s-manual" ${t.allowManualCount?'checked':''}> 回数枠</label>
+ <div style="display:flex;flex-direction:row;align-items:center;gap:4px;font-size:11px;color:#68778c;white-space:nowrap;">
+   <div style="display:flex;align-items:center;gap:1px;"><input class="sm" type="number" min="0" value="${t.min}" style="width:36px">分</div>
+   <label style="display:flex;align-items:center;gap:1px;cursor:pointer;margin:0;"><input type="checkbox" class="s-manual" ${t.allowManualCount?'checked':''}> 回数枠</label>
  </div>
  <button class="remove-task">✕</button>`;
  r.querySelector(".remove-task").onclick=()=>r.remove();
@@ -491,8 +492,8 @@ function addSettingRow(t,box){
   const currentY = initialTop + deltaY + r.offsetHeight / 2;
   const siblings = [...box.querySelectorAll('.setting-row:not(.dragging)')];
   const nextSibling = siblings.find(sib => {
-   const rect = sib.getBoundingClientRect();
-   return currentY <= rect.top + rect.height / 2;
+    const rect = sib.getBoundingClientRect();
+    return currentY <= rect.top + rect.height / 2;
   });
 
   if (placeholder.nextSibling !== nextSibling) box.insertBefore(placeholder, nextSibling || null);
@@ -501,14 +502,14 @@ function addSettingRow(t,box){
  const endPointer = e => {
   if(pointerId !== e.pointerId) return;
   if(dragging){
-   if(placeholder){
-    box.insertBefore(r, placeholder);
-    placeholder.remove();
-    placeholder = null;
-   }
-   r.style.position = ""; r.style.top = ""; r.style.left = ""; r.style.width = ""; r.style.zIndex = ""; r.style.boxShadow = ""; r.style.backgroundColor = ""; r.style.transform = "";
-   r.classList.remove("dragging","touch-grabbed");
-   draggedSetting = null;
+    if(placeholder){
+     box.insertBefore(r, placeholder);
+     placeholder.remove();
+     placeholder = null;
+    }
+    r.style.position = ""; r.style.top = ""; r.style.left = ""; r.style.width = ""; r.style.zIndex = ""; r.style.boxShadow = ""; r.style.backgroundColor = ""; r.style.transform = "";
+    r.classList.remove("dragging","touch-grabbed");
+    draggedSetting = null;
   }
   try{handle.releasePointerCapture(pointerId)}catch(_){ }
   pointerId = null; dragging = false;
@@ -543,10 +544,10 @@ document.getElementById("saveSettings").onclick=()=>{
   const category=r.querySelector(".category-select").value;
   const ci=categoryInfo(category);
   return {
-   id,category,cat:ci.label,icon:ci.icon,
-   name:r.querySelector(".sn").value||"クエスト",
-   min:Math.max(0,Number(r.querySelector(".sm").value)||0),
-   allowManualCount: r.querySelector(".s-manual").checked
+    id,category,cat:ci.label,icon:ci.icon,
+    name:r.querySelector(".sn").value||"クエスト",
+    min:Math.max(0,Number(r.querySelector(".sm").value)||0),
+    allowManualCount: r.querySelector(".s-manual").checked
   };
  });
  save();
@@ -558,11 +559,11 @@ document.getElementById("saveSettings").onclick=()=>{
 
 document.getElementById("factoryReset").onclick=()=>{
  if(confirm("全データを消去して初期状態に戻します。よろしいですか？")){
-   localStorage.getItem(KEY);
-   localStorage.removeItem(KEY);
-   localStorage.removeItem(KEY+"_categoryChoices");
-   localStorage.removeItem(KEY+"_password");
-   location.reload();
+    localStorage.getItem(KEY);
+    localStorage.removeItem(KEY);
+    localStorage.removeItem(KEY+"_categoryChoices");
+    localStorage.removeItem(KEY+"_password");
+    location.reload();
  }
 };
 
