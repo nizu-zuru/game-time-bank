@@ -1,8 +1,8 @@
 const customStyle = document.createElement('style');
 customStyle.textContent = `
-.setting-row{grid-template-columns:30px 110px minmax(50px,1fr) auto 34px!important; gap:4px; align-items:center;}
-@media(max-width:520px){.setting-row{grid-template-columns:24px 80px minmax(40px,1fr) auto 28px!important; gap:2px;}}
-.setting-row input.sm { padding: 4px; text-align: center; }
+.setting-row{grid-template-columns:30px 110px minmax(40px,1fr) auto 34px!important; gap:4px; align-items:center;}
+@media(max-width:520px){.setting-row{grid-template-columns:24px 75px minmax(30px,1fr) auto 28px!important; gap:2px;}}
+.setting-row input.sm { width: 52px; padding: 4px 2px; text-align: center; }
 .setting-row .s-manual { transform: scale(1.1); margin-right: 2px; cursor: pointer; }
 .task.partial { border-color:#8cc3ff; background:#f4f9ff; }
 .task.partial .check { background:#e7f1ff; border-color:#8cc3ff; color:#4b7bec; font-weight:900; }
@@ -203,7 +203,7 @@ function render(){
     rightAreaHtml = `<div class="manual-input-wrap" onclick="event.stopPropagation()">
       <input type="number" class="task-count-input" value="${count}" min="0" onchange="updateManualCount('${t.id}', this.value)">
       <span style="font-size:12px;font-weight:bold;color:#68778c;">回</span>
-      <span style="font-size:12px;font-weight:bold;color:#68778c;margin-left:2px;">×${t.min}分</span>
+      <span class="points" style="margin-left:2px;line-height:1.2;">×${t.min}分</span>
     </div>`;
   } else {
     rightAreaHtml = `<div class="points" style="text-align:right;line-height:1.2;">＋${t.min}分</div>`;
@@ -256,7 +256,7 @@ function renderWeek(){
  document.getElementById("starRow").innerHTML=Array.from({length:7},(_,i)=>`<span class="star ${i<stars?"on":""}">⭐</span>`).join("");
 }
 
-function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]))}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&quot;","'":"&#039;"}[m]))}
 function sessionElapsedSec(){return data.activeSession?Math.max(0,(Date.now()-data.activeSession.startAt)/1000):0}
 function timerText(sec){
  sec=Math.max(0,Math.ceil(sec));
@@ -439,7 +439,7 @@ function addSettingRow(t,box){
  <select class="category-select">${categoryChoices.map(c=>`<option value="${c.value}" ${c.value===cat?"selected":""}>${esc(categoryLabel(c.value))}</option>`).join("")}</select>
  <input class="sn" value="${esc(t.name)}">
  <div style="display:flex;flex-direction:row;align-items:center;gap:4px;font-size:11px;color:#68778c;white-space:nowrap;">
-   <div style="display:flex;align-items:center;gap:1px;"><input class="sm" type="number" min="0" value="${t.min}" style="width:36px">分</div>
+   <div style="display:flex;align-items:center;gap:1px;"><input class="sm" type="number" min="0" value="${t.min}" style="width:52px">分</div>
    <label style="display:flex;align-items:center;gap:1px;cursor:pointer;margin:0;"><input type="checkbox" class="s-manual" ${t.allowManualCount?'checked':''}> 回数枠</label>
  </div>
  <button class="remove-task">✕</button>`;
