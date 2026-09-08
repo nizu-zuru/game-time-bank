@@ -721,16 +721,19 @@ document.getElementById("factoryReset").onclick=()=>{
 };
 
 /* --- 0時（深夜）をまたいだ時の自動更新 --- */
-function scheduleMidnightRefresh() {
-  const now = new Date();
-  const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-  const timeUntilMidnight = tomorrow - now;
-  
-  setTimeout(() => {
+// ページ読み込み時の日付を保存
+const initialDate = new Date().toDateString();
+
+function checkMidnight() {
+  const currentDate = new Date().toDateString();
+  // 日付が変わっていたらページを強制リロード
+  if (currentDate !== initialDate) {
     location.reload();
-  }, timeUntilMidnight);
+  }
 }
-scheduleMidnightRefresh();
+
+// 1分ごとに日付が変わったかをチェック（画面を開いたまま放置している場合の対策）
+setInterval(checkMidnight, 60000);
 
 if(data.activeSession){
  const remaining=Math.max(0,data.activeSession.allowedSec-sessionElapsedSec());
@@ -739,8 +742,10 @@ if(data.activeSession){
 }
 render();
 
+// 既存のvisibilitychangeイベントを拡張
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") {
+    checkMidnight(); // スリープ復帰・タブ切り替え時にも日付をチェック
     render();
   }
 });
