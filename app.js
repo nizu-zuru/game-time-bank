@@ -45,7 +45,7 @@ document.head.appendChild(customStyle);
 
 const KEY="gameTimeBankV3";
 const defaultTasks=[
- {id:"study1",cat:"🏫 学校",category:"study",icon:"🏫",name:"音・計・リ",min:10,allowManualCount:false}
+ {id:"study1",cat:"🏫 学校",category:"study",icon:"🏫",name:"音・計・リ",min:10,allowManualCount:false},
  {id:"music1",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"カレリア(1回につき)",min:5,allowManualCount:true},
  {id:"music2",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"レッスンシート",min:25,allowManualCount:false},
  {id:"music3",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"レパートリー",min:5,allowManualCount:false},
