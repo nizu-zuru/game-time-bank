@@ -1,7 +1,8 @@
+const APP_VERSION="V30";
 const customStyle = document.createElement('style');
 customStyle.textContent = `
-.setting-row{display:grid; grid-template-columns:30px 110px minmax(40px,1fr) auto 34px!important; gap:6px; align-items:center; margin-bottom:8px;}
-@media(max-width:520px){.setting-row{grid-template-columns:24px 75px minmax(30px,1fr) auto 28px!important; gap:4px;}}
+.setting-row{display:grid; grid-template-columns:30px 110px minmax(0,1fr) 110px 34px!important; gap:6px; align-items:center; margin-bottom:8px;}
+@media(max-width:520px){.setting-row{grid-template-columns:24px 75px minmax(0,1fr) 90px 28px!important; gap:4px;}}
 
 .setting-row select, .setting-row input.sn, .setting-row input.sm {
   height: 36px;
@@ -654,7 +655,7 @@ function setupRelocatedResetButtons() {
     if (!footerArea) {
       footerArea = document.createElement("div");
       footerArea.id = "dangerFooterArea";
-      footerArea.innerHTML = "<p>※保護者用管理操作エリア</p>";
+      footerArea.innerHTML = `<p>※保護者用管理操作エリア</p><div id="appVersion" style="font-size:11px;color:#a0aec0;margin-bottom:12px;">アプリバージョン：${APP_VERSION}</div>`;
       
       const appContainer = document.querySelector(".app-container") || document.querySelector(".container") || document.body;
       appContainer.appendChild(footerArea);
@@ -798,9 +799,9 @@ function addSettingRow(t,box){
  r.innerHTML=`<div class="drag-handle" title="上下にスワイプして並べ替え">☰</div>
  <select class="category-select">${categoryChoices.map(c=>`<option value="${c.value}" ${c.value===cat?"selected":""}>${esc(categoryLabel(c.value))}</option>`).join("")}</select>
  <input class="sn" value="${esc(t.name)}">
- <div style="display:flex;flex-direction:row;align-items:center;justify-content:center;gap:4px;font-size:11px;color:#68778c;white-space:nowrap;height:36px;">
-   <div style="display:flex;align-items:center;gap:1px;"><input class="sm" type="number" min="0" value="${t.min}">分</div>
-   <label style="display:flex;align-items:center;justify-content:center;cursor:pointer;margin:0;width:60px;height:36px;" title="回数枠"><input type="checkbox" class="s-manual" ${t.allowManualCount?'checked':''}></label>
+ <div style="display:flex;flex-direction:row;align-items:center;justify-content:center;gap:4px;font-size:11px;color:#68778c;white-space:nowrap;height:36px;width:100%;min-width:0;">
+   <div style="display:flex;align-items:center;gap:1px;flex-shrink:0;"><input class="sm" type="number" min="0" value="${t.min}">分</div>
+   <label style="display:flex;align-items:center;justify-content:center;cursor:pointer;margin:0;width:32px;height:36px;flex-shrink:0;" title="回数枠"><input type="checkbox" class="s-manual" ${t.allowManualCount?'checked':''}></label>
  </div>
  <button class="remove-task">✕</button>`;
  r.querySelector(".remove-task").onclick=()=>r.remove();
