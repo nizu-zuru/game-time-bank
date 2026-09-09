@@ -341,11 +341,31 @@ function render(){
   list.appendChild(el);
  });
 
- const logs=document.getElementById("logs");logs.innerHTML="";
+const logs=document.getElementById("logs");logs.innerHTML="";
  if(!day().logs.length)logs.innerHTML='<div class="empty">まだゲーム記録はありません</div>';
  else [...day().logs].reverse().forEach(l=>{
   const el=document.createElement("div");el.className="log";
-  el.innerHTML=`<div><div class="log-time">${l.start?timeStr(l.start):"直接入力"}${l.end?" ～ "+timeStr(l.end):""}</div><div class="log-kind">${l.kind||"ゲーム"}</div></div><div class="log-use">−${l.min}分</div><div class="log-remain">残り ${l.remain}分</div>`;
+
+  // --- ログの色と表示テキストの判定 ---
+  let useText = `−${l.min}`;
+  let useStyle = ""; // 通常はデフォルト色
+
+  if (l.kind === "直接入力") {
+    if (l.min < 0) {
+      // プラス入力（内部的にはマイナス値として保存されている）
+      useText = `+${Math.abs(l.min)}`;
+      useStyle = "color: #4b7bec;"; // 青色
+    } else {
+      // マイナス入力（内部的にはプラス値として保存されている）
+      useText = `-${l.min}`;
+      useStyle = "color: #e96565;"; // 赤色
+    }
+  } else {
+    // タイマー等の通常消費
+    useText = `−${l.min}`;
+  }
+
+  el.innerHTML=`<div><div class="log-time">${l.start?timeStr(l.start):"直接入力"}${l.end?" ～ "+timeStr(l.end):""}</div><div class="log-kind">${l.kind||"ゲーム"}</div></div><div class="log-use" style="${useStyle}">${useText}分</div><div class="log-remain">残り ${l.remain}分</div>`;
   logs.appendChild(el);
  });
  renderWeek();
@@ -477,6 +497,20 @@ document.getElementById("applyDirectTimeBtn").onclick = () => {
   render();
   document.getElementById("directTimeInput").value = "";
 };
+
+// 直接入力欄：全角数値・全角マイナスを自動的に半角へ変換する処理
+const directInputEl = document.getElementById("directTimeInput");
+if (directInputEl) {
+  directInputEl.addEventListener("input", function() {
+    let val = this.value;
+    // 全角数字を半角に変換
+    val = val.replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
+    // 全角ハイフン・マイナスなどを半角マイナスに変換
+    val = val.replace(/[ー−－]/g, "-");
+    // 半角数字とマイナス以外は削除（強制的に半角数値のみにする）
+    this.value = val.replace(/[^\d\-]/g, "");
+  });
+}
 
 /* --- 誤操作防止対策：リセットボタンを最下部領域へ移動＆2段階確認 --- */
 function setupRelocatedResetButtons() {
