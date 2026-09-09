@@ -45,12 +45,10 @@ document.head.appendChild(customStyle);
 
 const KEY="gameTimeBankV3";
 
-// --- 音声再生用の変数と関数 ---
 let lastPlayedVoice = null;
 let lastPlayed15Min = 0;
 
 function playSound(path, type) {
-  // 設定がOFFの場合は再生せずに終了
   if (type === 'se' && localStorage.getItem(KEY+"_se") === "false") return;
   if (type === 'voice' && localStorage.getItem(KEY+"_voice") === "false") return;
   
@@ -209,7 +207,6 @@ window.updateManualCount = (id, val) => {
   save(); render(); showToast("回数を更新しました");
 };
 
-/* --- 周囲の文字を小さく、数字を大きく調整したレイアウト関数 --- */
 function cleanUpOldLayout() {
   const msgEl = document.getElementById("remainMessage");
   if (msgEl) {
@@ -239,7 +236,6 @@ function cleanUpOldLayout() {
   }
 }
 
-// 【変更後】 font-size:20px; を font-size:36px; に変更し、余白を少し調整
 function updateBalanceDisplay(bal) {
   cleanUpOldLayout();
   const balEl = document.getElementById("balance");
@@ -263,21 +259,18 @@ function updateBalanceDisplay(bal) {
   }
 }
 
-// --- 追加: stickyTimerを更新する関数 ---
 function updateStickyTimer() {
   const el = document.getElementById("stickyTimer");
   if (!el) return;
-  el.style.display = "block"; // 非表示状態から表示に切り替え
+  el.style.display = "block";
   
   const s = data.activeSession;
   if (s) {
-    // ゲーム中：タイマーを表示して色を赤系にする
     const remaining = Math.max(0, s.allowedSec - sessionElapsedSec());
     el.textContent = "🎮 " + timerText(remaining);
     el.style.color = "#e96565";
     el.style.background = "#fee2e2";
   } else {
-    // 待機中：残高を表示して色を青系にする
     const bal = Math.floor(balance());
     el.textContent = "残り " + bal + "分";
     el.style.color = "#4b7bec";
@@ -285,13 +278,19 @@ function updateStickyTimer() {
   }
 }
 
+// ゲームBANK用の文字色・プラスマイナスフォーマット関数
+function formatBank(val) {
+  if (val > 0) return `<span style="color:#4b7bec;">＋${val}分</span>`;
+  if (val < 0) return `<span style="color:#e96565;">−${Math.abs(val)}分</span>`;
+  return `<span style="color:#24324a;">0分</span>`;
+}
+
 function render(){
  document.getElementById("todayLabel").textContent=dateLabel();
  const bal=balance();
  
  updateBalanceDisplay(bal);
- 
- updateStickyTimer(); // ← ここでヘッダーの残り時間を更新
+ updateStickyTimer();
  
  document.getElementById("todayEarned").textContent=mins(earned());
  document.getElementById("todayUsed").textContent=mins(used()+activeElapsedMinutes());
@@ -306,10 +305,13 @@ function render(){
  document.getElementById("taskTotalCount").textContent=data.tasks.length;
  const pct=data.tasks.length?Math.min(100,completedTasks/data.tasks.length*100):0;
  document.getElementById("studyProgress").style.width=pct+"%";
- document.getElementById("carry").textContent=mins(carry());
- document.getElementById("sumEarn").textContent=`＋${earned()}分`;
- document.getElementById("sumUse").textContent=`−${Math.round(used()+activeElapsedMinutes())}分`;
- document.getElementById("summaryBalance").textContent=mins(bal);
+ 
+ // ゲームBANKエリアのフォーマット適用
+ document.getElementById("carry").innerHTML = formatBank(carry());
+ document.getElementById("sumEarn").innerHTML = formatBank(earned());
+ document.getElementById("sumUse").innerHTML = formatBank(-(Math.round(used()+activeElapsedMinutes())));
+ document.getElementById("summaryBalance").innerHTML = formatBank(Math.floor(bal));
+ 
  const list=document.getElementById("taskList");list.innerHTML="";
  
  data.tasks.forEach(t=>{
@@ -335,10 +337,9 @@ function render(){
 
   el.innerHTML=`<div class="task-icon task-cat ${cc}">${esc(t.icon||"📝")}</div><div class="check" aria-label="完了">${checkHtml}</div><div style="flex-grow:1;min-width:0;overflow:hidden;"><div class="task-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(t.name)}</div><div class="task-cat-text">${esc(taskCategoryText(t))}</div></div><div class="task-right-area">${rightAreaHtml}</div>`;
   
-el.onclick=(e)=>{
+  el.onclick=(e)=>{
     if(e.target.tagName === 'INPUT') return;
     
-    // 変更点：クリック前のクリア数を計算しておく
     const prevDoneCount = data.tasks.filter(task => {
        const c = day().done.filter(x => x === task.id).length;
        return task.allowManualCount ? c > 0 : c >= 1;
@@ -357,20 +358,18 @@ el.onclick=(e)=>{
       }
     }
 
-    // 変更点：クリック後のクリア数を計算
     const newDoneCount = data.tasks.filter(task => {
        const c = day().done.filter(x => x === task.id).length;
        return task.allowManualCount ? c > 0 : c >= 1;
     }).length;
 
-    // 新しくクリア数が増えた場合のみ、エフェクトを判定して呼び出す
     if (newDoneCount > prevDoneCount) {
         const totalTasks = data.tasks.length;
         if (newDoneCount === totalTasks) {
-            playSound('./sound/se/perfect.opus', 'se'); // ←追加 (条件10)
+            playSound('./sound/se/perfect.opus', 'se');
             triggerCharacterEffect('all');
         } else if ([2, 4, 6].includes(newDoneCount)) {
-            playSound('./sound/se/clear.opus', 'se');   // ←追加 (条件7,8,9)
+            playSound('./sound/se/clear.opus', 'se');
             triggerCharacterEffect(newDoneCount);
         }
     }
@@ -380,27 +379,23 @@ el.onclick=(e)=>{
   list.appendChild(el);
  });
 
-const logs=document.getElementById("logs");logs.innerHTML="";
+ const logs=document.getElementById("logs");logs.innerHTML="";
  if(!day().logs.length)logs.innerHTML='<div class="empty">まだゲーム記録はありません</div>';
  else [...day().logs].reverse().forEach(l=>{
   const el=document.createElement("div");el.className="log";
 
-  // --- ログの色と表示テキストの判定 ---
   let useText = `−${l.min}`;
-  let useStyle = ""; // 通常はデフォルト色
+  let useStyle = "";
 
   if (l.kind === "直接入力") {
     if (l.min < 0) {
-      // プラス入力（内部的にはマイナス値として保存されている）
       useText = `+${Math.abs(l.min)}`;
-      useStyle = "color: #4b7bec;"; // 青色
+      useStyle = "color: #4b7bec;";
     } else {
-      // マイナス入力（内部的にはプラス値として保存されている）
       useText = `-${l.min}`;
-      useStyle = "color: #e96565;"; // 赤色
+      useStyle = "color: #e96565;";
     }
   } else {
-    // タイマー等の通常消費
     useText = `−${l.min}`;
   }
 
@@ -461,9 +456,9 @@ function startTimer(){
  if(bal<=0){alert("ゲーム時間がありません。クエストをクリアして時間をGETしましょう！");return}
  data.activeSession={startAt:Date.now(),allowedSec:bal*60};
  
- lastPlayedVoice = null; // リセット
- lastPlayed15Min = 0;    // リセット
- playSound('./sound/voice/start.opus', 'voice'); // ←追加 (条件1)
+ lastPlayedVoice = null;
+ lastPlayed15Min = 0;
+ playSound('./sound/voice/start.opus', 'voice');
  
  save(); showToast(`🎮 ${bal}分スタート！`); render(); startLiveTimer();
 }
@@ -477,14 +472,14 @@ function startLiveTimer(){
   
   const bal=balance();
   updateBalanceDisplay(bal);
-  
-  updateStickyTimer(); // ← ここでもヘッダーの残り時間をリアルタイム更新
+  updateStickyTimer();
   
   document.getElementById("todayUsed").textContent=mins(used()+activeElapsedMinutes());
-  document.getElementById("sumUse").textContent=`−${Math.round(used()+activeElapsedMinutes())}分`;
-  document.getElementById("summaryBalance").textContent=mins(bal);
   
-  // --- ここから追加：残り時間と経過時間のチェック ---
+  // ゲームBANKのリアルタイム更新
+  document.getElementById("sumUse").innerHTML = formatBank(-(Math.round(used()+activeElapsedMinutes())));
+  document.getElementById("summaryBalance").innerHTML = formatBank(Math.floor(bal));
+  
   const remainingSec = Math.ceil(remaining);
   if (remainingSec === 1800 && lastPlayedVoice !== 1800) { playSound('./sound/voice/nokori30hun.opus', 'voice'); lastPlayedVoice = 1800; }
   else if (remainingSec === 600 && lastPlayedVoice !== 600) { playSound('./sound/voice/nokori10hun.opus', 'voice'); lastPlayedVoice = 600; }
@@ -497,7 +492,6 @@ function startLiveTimer(){
       playSound('./sound/se/pikon_15hun.opus', 'se');
       lastPlayed15Min = elapsed15MinCount;
   }
-  // --- ここまで追加 ---
   
   if(remaining<=0)finishTimer(true);
  },250);
@@ -515,7 +509,6 @@ function finishTimer(auto=false){
   day().logs.push({start,end,min:useRounded,remain:remainAfter,kind:auto?"タイマー（自動終了）":"タイマー"});
  }
  
- // ←ここに追加 (条件6)
  if (auto) playSound('./sound/voice/finish.opus', 'voice');
  
  save();clearInterval(timerInterval);timerInterval=null;render();
@@ -525,58 +518,61 @@ function finishTimer(auto=false){
 
 document.getElementById("startBtn").onclick=startTimer;
 document.getElementById("finishBtn").onclick=()=>finishTimer(false);
-document.getElementById("applyDirectTimeBtn").onclick = () => {
+
+// 時間の直接入力の処理
+function applyDirectTime(isAdd) {
   if (data.activeSession) {
     alert("タイマー中は直接入力できません。ゲーム終了を押すかお待ちください。");
     return;
   }
   
-  const val = document.getElementById("directTimeInput").value;
+  const inputEl = isAdd ? document.getElementById("directTimeAddInput") : document.getElementById("directTimeSubInput");
+  const val = inputEl.value;
   const inputMin = parseInt(val, 10);
   
-  if (isNaN(inputMin) || inputMin === 0) {
-    alert("0以外の数値を入力してください。");
+  if (isNaN(inputMin) || inputMin <= 0) {
+    alert("1以上の数値を入力してください。");
     return;
   }
 
   const bal = Math.floor(balance());
   
-  if (inputMin < 0) {
-    // ペナルティ等で時間を減らす場合（例: -10）
-    const deduct = Math.abs(inputMin);
-    if (bal < deduct) {
+  if (!isAdd) {
+    // ⏰－（マイナス）の場合：残り時間から引く
+    if (bal < inputMin) {
       alert(`残高（${bal}分）が足りません。`);
       return;
     }
-    day().logs.push({start:null, end:null, min: deduct, remain: bal - deduct, kind: "直接入力"});
-    showToast(`🎮 ${inputMin}分 反映`);
+    day().logs.push({start:null, end:null, min: inputMin, remain: bal - inputMin, kind: "直接入力"});
+    showToast(`🎮 ${inputMin}分 減らしました`);
   } else {
-    // ボーナス等で時間を増やす場合（例: 10）
-    // ログの「使用時間(min)」をマイナス値で記録することで、残高を加算させます
+    // ⏰＋（プラス）の場合：残り時間に足す
     day().logs.push({start:null, end:null, min: -inputMin, remain: bal + inputMin, kind: "直接入力"});
-    showToast(`🎉 ＋${inputMin}分 反映`);
+    showToast(`🎉 ＋${inputMin}分 追加しました`);
   }
   
   save();
   render();
-  document.getElementById("directTimeInput").value = "";
-};
-
-// 直接入力欄：全角数値・全角マイナスを自動的に半角へ変換する処理
-const directInputEl = document.getElementById("directTimeInput");
-if (directInputEl) {
-  directInputEl.addEventListener("input", function() {
-    let val = this.value;
-    // 全角数字を半角に変換
-    val = val.replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
-    // 全角ハイフン・マイナスなどを半角マイナスに変換
-    val = val.replace(/[ー−－]/g, "-");
-    // 半角数字とマイナス以外は削除（強制的に半角数値のみにする）
-    this.value = val.replace(/[^\d\-]/g, "");
-  });
+  inputEl.value = "";
 }
 
-/* --- 誤操作防止対策：リセットボタンを最下部領域へ移動＆2段階確認 --- */
+const applyDirectAddBtn = document.getElementById("applyDirectAddBtn");
+if(applyDirectAddBtn) applyDirectAddBtn.onclick = () => applyDirectTime(true);
+
+const applyDirectSubBtn = document.getElementById("applyDirectSubBtn");
+if(applyDirectSubBtn) applyDirectSubBtn.onclick = () => applyDirectTime(false);
+
+// 全角数値を自動的に半角数値に変換する処理
+[document.getElementById("directTimeAddInput"), document.getElementById("directTimeSubInput")].forEach(el => {
+  if (el) {
+    el.addEventListener("input", function() {
+      let val = this.value;
+      val = val.replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
+      this.value = val.replace(/[^\d]/g, "");
+    });
+  }
+});
+
 function setupRelocatedResetButtons() {
   const resetBtn = document.getElementById("resetTodayBtn");
   const clearLogsBtn = document.getElementById("clearLogsBtn");
@@ -626,9 +622,8 @@ function setupRelocatedResetButtons() {
 setTimeout(setupRelocatedResetButtons, 100);
 
 document.getElementById("settingsBtn").onclick = () => {
-  playSound('./sound/se/pi_memu.opus', 'se'); // SEとして鳴らす
+  playSound('./sound/se/pi_memu.opus', 'se');
   
-  // パスワードを要求する設定かチェック（初期値はtrue）
   const requirePwd = localStorage.getItem(KEY+"_requirePwd") !== "false";
   
   if (requirePwd) {
@@ -654,10 +649,9 @@ function openSettings(){
  const currentPwd = localStorage.getItem(KEY+"_password") || "0000";
  document.getElementById("parentPassword").value = currentPwd;
  
- // 追加：チェックボックスの現在の状態を読み込んでチェックを入れる
-  document.getElementById("requirePasswordCheck").checked = (localStorage.getItem(KEY+"_requirePwd") !== "false");
-  document.getElementById("soundSeCheck").checked = (localStorage.getItem(KEY+"_se") !== "false");
-  document.getElementById("soundVoiceCheck").checked = (localStorage.getItem(KEY+"_voice") !== "false");
+ document.getElementById("requirePasswordCheck").checked = (localStorage.getItem(KEY+"_requirePwd") !== "false");
+ document.getElementById("soundSeCheck").checked = (localStorage.getItem(KEY+"_se") !== "false");
+ document.getElementById("soundVoiceCheck").checked = (localStorage.getItem(KEY+"_voice") !== "false");
  
  const modal=document.getElementById("settingsModal");
  modal.classList.add("show"); modal.setAttribute("aria-hidden","false");
@@ -830,11 +824,10 @@ document.getElementById("addCategoryBtn").onclick = () => {
 };
 
 document.getElementById("saveSettings").onclick=()=>{
- // チェックボックスの状態を保存
   localStorage.setItem(KEY+"_requirePwd", document.getElementById("requirePasswordCheck").checked);
   localStorage.setItem(KEY+"_se", document.getElementById("soundSeCheck").checked);
   localStorage.setItem(KEY+"_voice", document.getElementById("soundVoiceCheck").checked);
-  // --- ここまで追加 ---
+  
  if(document.getElementById("categorySettings")) saveCategorySettings();
  const rows=[...document.querySelectorAll("#settingsTasks .setting-row")];
  data.tasks=rows.map((r,i)=>{
@@ -865,19 +858,15 @@ document.getElementById("factoryReset").onclick=()=>{
  }
 };
 
-/* --- 0時（深夜）をまたいだ時の自動更新 --- */
-// ページ読み込み時の日付を保存
 const initialDate = new Date().toDateString();
 
 function checkMidnight() {
   const currentDate = new Date().toDateString();
-  // 日付が変わっていたらページを強制リロード
   if (currentDate !== initialDate) {
     location.reload();
   }
 }
 
-// 1分ごとに日付が変わったかをチェック（画面を開いたまま放置している場合の対策）
 setInterval(checkMidnight, 60000);
 
 if(data.activeSession){
@@ -887,38 +876,32 @@ if(data.activeSession){
 }
 render();
 
-// 既存のvisibilitychangeイベントを拡張
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") {
-    checkMidnight(); // スリープ復帰・タブ切り替え時にも日付をチェック
+    checkMidnight();
     render();
   }
 });
 
-// --- アプリの強制更新ボタンの処理 ---
 const forceUpdateBtn = document.getElementById("forceUpdateBtn");
 if (forceUpdateBtn) {
   forceUpdateBtn.onclick = async () => {
     if (confirm("アプリを最新版に更新しますか？\n（画面が再読み込みされます）")) {
-      // Service Workerのキャッシュをすべて削除
       if ('caches' in window) {
         const keys = await caches.keys();
         await Promise.all(keys.map(k => caches.delete(k)));
       }
-      // Service Workerの登録を解除
       if ('serviceWorker' in navigator) {
         const regs = await navigator.serviceWorker.getRegistrations();
         for (const reg of regs) {
           await reg.unregister();
         }
       }
-      // 画面を強制リロードして最新ファイルを取得
       location.reload();
     }
   };
 }
 
-/* --- キラキラ＆キャラクター出現エフェクト --- */
 function triggerCharacterEffect(type) {
   const imgSrc = `./image/Cleared_${type}.webp`;
   const container = document.createElement('div');
@@ -941,22 +924,18 @@ function triggerCharacterEffect(type) {
   container.appendChild(img);
   document.body.appendChild(container);
   
-  // タイムアウトIDを保存するための変数
   let timeoutId;
 
-  // 消去処理をまとめた関数
   const removeEffect = () => {
       container.classList.add('fade-out');
       setTimeout(() => container.remove(), 500);
-      container.removeEventListener('click', removeEffect); // 重複防止
+      container.removeEventListener('click', removeEffect);
   };
 
-  // 画面タップ時に即座に消去
   container.addEventListener('click', () => {
-      clearTimeout(timeoutId); // 2.5秒のタイマーをキャンセル
+      clearTimeout(timeoutId);
       removeEffect();
   });
   
-  // 2.5秒後に自動で消去
   timeoutId = setTimeout(removeEffect, 2500);
 }
