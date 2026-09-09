@@ -64,13 +64,13 @@
         <div class="quick-title">直接入力</div>
         
         <div class="direct-input-area" style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
-          <img src="+.webp" alt="＋" style="width: 32px; height: 32px; object-fit: contain;">
+          <img src="image/+.webp" alt="" style="width: 32px; height: 32px; object-fit: contain;">
           <input type="number" inputmode="numeric" id="directTimeAddInput" class="big-input" placeholder="分数" min="1" style="flex: 1; min-width: 0; padding: 10px;">
           <button class="big-btn primary" id="applyDirectAddBtn" style="width: auto; padding: 0 20px; white-space: nowrap;">追加</button>
         </div>
         
         <div class="direct-input-area" style="display: flex; gap: 8px; align-items: center;">
-          <img src="-.webp" alt="－" style="width: 32px; height: 32px; object-fit: contain;">
+          <img src="image/-.webp" alt="" style="width: 32px; height: 32px; object-fit: contain;">
           <input type="number" inputmode="numeric" id="directTimeSubInput" class="big-input" placeholder="分数" min="1" style="flex: 1; min-width: 0; padding: 10px;">
           <button class="big-btn danger" id="applyDirectSubBtn" style="width: auto; padding: 0 20px; white-space: nowrap;">追加</button>
         </div>
@@ -125,7 +125,6 @@
     
     <p class="hint">クエスト名・種類・獲得時間を変更できます。☰を上下にスワイプして並び順を変更できます。</p>
     
-    <!-- 追加：クエスト一覧のヘッダー行 -->
     <div class="setting-row" style="font-size:12px; font-weight:bold; color:#68778c; text-align:center; border-bottom:2px solid #e2e8f0; padding-bottom:6px; margin-bottom:10px;">
       <div></div>
       <div>種類</div>
@@ -176,8 +175,6 @@
         <button class="big-btn primary" id="savePasswordBtn" style="width: auto; padding: 0 20px; white-space: nowrap;">変更</button>
       </div>
     </div>
-
-    <!-- 削除された時間修正エリアはここにありました -->
 
     <button class="big-btn primary" id="saveSettings" style="width:100%; margin-top:30px; font-size:16px;">保存して閉じる</button>
     <button class="big-btn primary" id="forceUpdateBtn" style="width:100%; margin-top:12px; background:#fff; border:2px solid #e2e8f0; color:#4b7bec;">🔄 アプリを最新版に更新</button>

@@ -3,7 +3,6 @@ customStyle.textContent = `
 .setting-row{display:grid; grid-template-columns:30px 110px minmax(40px,1fr) auto 34px!important; gap:6px; align-items:center; margin-bottom:8px;}
 @media(max-width:520px){.setting-row{grid-template-columns:24px 75px minmax(30px,1fr) auto 28px!important; gap:4px;}}
 
-/* クエスト設定フォームの高さを統一して揃えるスタイル */
 .setting-row select, .setting-row input.sn, .setting-row input.sm {
   height: 36px;
   box-sizing: border-box;
@@ -25,7 +24,6 @@ customStyle.textContent = `
 .manual-input-wrap { display: flex; align-items: center; gap: 3px; flex-shrink: 0; }
 .task-right-area { display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-left: auto; }
 
-/* 誤操作防止：最下部リセットエリアのスタイル */
 #dangerFooterArea {
   margin-top: 50px;
   padding: 24px 12px 50px;
@@ -392,10 +390,8 @@ function render(){
         const totalTasks = data.tasks.length;
         if (newDoneCount === totalTasks) {
             playSound('./sound/se/perfect.opus', 'se');
-            triggerCharacterEffect('all');
         } else if ([2, 4, 6].includes(newDoneCount)) {
             playSound('./sound/se/clear.opus', 'se');
-            triggerCharacterEffect(newDoneCount);
         }
     }
 
@@ -584,7 +580,6 @@ if(applyDirectAddBtn) applyDirectAddBtn.onclick = () => applyDirectTime(true);
 const applyDirectSubBtn = document.getElementById("applyDirectSubBtn");
 if(applyDirectSubBtn) applyDirectSubBtn.onclick = () => applyDirectTime(false);
 
-// 全角数値を自動的に半角数値に変換する処理
 [document.getElementById("directTimeAddInput"), document.getElementById("directTimeSubInput")].forEach(el => {
   if (el) {
     el.addEventListener("input", function() {
@@ -845,12 +840,58 @@ document.getElementById("addCategoryBtn").onclick = () => {
   });
 };
 
-document.getElementById("saveSettings").onclickご要望の3点の修正をコードに反映するため、現在動作している**ソースコード（HTML、CSS、JavaScriptなど）**をテキストで貼り付けていただけますか？
+document.getElementById("saveSettings").onclick = () => {
+  const newTasks = [];
+  document.querySelectorAll("#settingsTasks .setting-row").forEach(r => {
+    const id = r.dataset.id;
+    const category = r.querySelector(".category-select").value;
+    const name = r.querySelector(".sn").value;
+    const min = Number(r.querySelector(".sm").value);
+    const allowManualCount = r.querySelector(".s-manual").checked;
+    const catInfo = categoryInfo(category);
+    newTasks.push({id, category, cat: catInfo.label, icon: catInfo.icon, name, min, allowManualCount});
+  });
+  data.tasks = newTasks;
+  save();
+  saveCategorySettings();
+  render();
+  document.getElementById("closeSettings").click();
+  showToast("設定を保存しました");
+};
 
-こちらでは添付画像を直接確認できないため、共有いただいたコードの構造をもとに以下の対応方針で修正版を作成します。
+document.getElementById("forceUpdateBtn").onclick = () => {
+  if(confirm("アプリを最新版に更新しますか？")){
+     if('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+           for(let registration of registrations) { registration.unregister(); }
+        });
+     }
+     window.location.reload(true);
+  }
+};
 
-*   **項目の削除:** 「⏰ 時間の直接入力（修正用）」に該当するDOM要素をコードから完全に削除します。
-*   **幅の統一:** CSSプロパティ（`width` や `flex` など）を調整し、「🔄 アプリを最新版に更新」の幅を「保存して閉じる」ボタンの幅と同一にします。
-*   **ヘッダー固定と高さ揃え:** 「種類」「クエスト名」「時間」「回数枠」をドラッグ＆ドロップの対象外（固定要素）として最上部に配置し、FlexboxやGridを用いてチェックボックス枠を含めた各列・行の高さを均一に揃えます。
+document.getElementById("factoryReset").onclick = () => {
+  if(confirm("【警告】すべてのデータを初期化しますか？\n（クエスト設定、履歴、パスワードなどすべて消えます）")){
+    if(confirm("※本当に初期化してよろしいですか？（取り消せません）")){
+       localStorage.removeItem(KEY);
+       localStorage.removeItem(KEY+"_categoryChoices");
+       localStorage.removeItem(KEY+"_password");
+       localStorage.removeItem(KEY+"_requirePwd");
+       localStorage.removeItem(KEY+"_se");
+       localStorage.removeItem(KEY+"_voice");
+       window.location.reload();
+    }
+  }
+};
 
-修正対象のソースコードをご提示いただき次第、具体的なコードをご案内します。
+document.getElementById("requirePasswordCheck").onchange = (e) => {
+  localStorage.setItem(KEY+"_requirePwd", e.target.checked);
+};
+document.getElementById("soundSeCheck").onchange = (e) => {
+  localStorage.setItem(KEY+"_se", e.target.checked);
+};
+document.getElementById("soundVoiceCheck").onchange = (e) => {
+  localStorage.setItem(KEY+"_voice", e.target.checked);
+};
+
+render();
