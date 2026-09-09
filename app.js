@@ -837,21 +837,39 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 
+// --- アプリの強制更新ボタンの処理 ---
+const forceUpdateBtn = document.getElementById("forceUpdateBtn");
+if (forceUpdateBtn) {
+  forceUpdateBtn.onclick = async () => {
+    if (confirm("アプリを最新版に更新しますか？\n（画面が再読み込みされます）")) {
+      // Service Workerのキャッシュをすべて削除
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(k => caches.delete(k)));
+      }
+      // Service Workerの登録を解除
+      if ('serviceWorker' in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        for (const reg of regs) {
+          await reg.unregister();
+        }
+      }
+      // 画面を強制リロードして最新ファイルを取得
+      location.reload();
+    }
+  };
+}
+
 /* --- キラキラ＆キャラクター出現エフェクト --- */
 function triggerCharacterEffect(type) {
-  // 指定されたフォルダから画像を読み込む
   const imgSrc = `./image/Cleared_${type}.webp`;
-  
-  // エフェクト用のコンテナを作成
   const container = document.createElement('div');
   container.className = 'character-effect-container';
   
-  // キャラクター画像
   const img = document.createElement('img');
   img.src = imgSrc;
   img.className = 'character-effect-image';
   
-  // キラキラ（✨）を15個ランダムな位置に散りばめる
   for (let i = 0; i < 15; i++) {
       const sparkle = document.createElement('div');
       sparkle.className = 'sparkle';
@@ -865,9 +883,22 @@ function triggerCharacterEffect(type) {
   container.appendChild(img);
   document.body.appendChild(container);
   
-  // 2.5秒後にフェードアウトして削除
-  setTimeout(() => {
+  // タイムアウトIDを保存するための変数
+  let timeoutId;
+
+  // 消去処理をまとめた関数
+  const removeEffect = () => {
       container.classList.add('fade-out');
       setTimeout(() => container.remove(), 500);
-  }, 2500);
+      container.removeEventListener('click', removeEffect); // 重複防止
+  };
+
+  // 画面タップ時に即座に消去
+  container.addEventListener('click', () => {
+      clearTimeout(timeoutId); // 2.5秒のタイマーをキャンセル
+      removeEffect();
+  });
+  
+  // 2.5秒後に自動で消去
+  timeoutId = setTimeout(removeEffect, 2500);
 }

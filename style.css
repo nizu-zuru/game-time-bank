@@ -41,7 +41,7 @@
   align-items: center;
   justify-content: center;
   z-index: 9999;
-  pointer-events: none; /* 画面のタップを邪魔しないようにする */
+  cursor: pointer; /* タップできることが分かるようにする */
 }
 .character-effect-image {
   max-width: 80%;
