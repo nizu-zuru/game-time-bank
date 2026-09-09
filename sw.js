@@ -1,4 +1,4 @@
-const CACHE="game-time-bank-v23";
+const CACHE="game-time-bank-v24";
 const ASSETS=[
   "./",
   "./index.html",
@@ -11,6 +11,8 @@ const ASSETS=[
   "./image/Cleared_4.webp",
   "./image/Cleared_6.webp",
   "./image/Cleared_all.webp",
+  "./image/-.webp",
+  "./image/+.webp",
   "./sound/se/clear.opus",
   "./sound/se/perfect.opus",
   "./sound/se/pi_memu.opus",

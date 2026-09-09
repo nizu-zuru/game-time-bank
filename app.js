@@ -1,9 +1,23 @@
 const customStyle = document.createElement('style');
 customStyle.textContent = `
-.setting-row{grid-template-columns:30px 110px minmax(40px,1fr) auto 34px!important; gap:4px; align-items:center;}
-@media(max-width:520px){.setting-row{grid-template-columns:24px 75px minmax(30px,1fr) auto 28px!important; gap:2px;}}
-.setting-row input.sm { width: 52px; padding: 4px 2px; text-align: center; }
-.setting-row .s-manual { transform: scale(1.1); margin-right: 2px; cursor: pointer; }
+.setting-row{display:grid; grid-template-columns:30px 110px minmax(40px,1fr) auto 34px!important; gap:6px; align-items:center; margin-bottom:8px;}
+@media(max-width:520px){.setting-row{grid-template-columns:24px 75px minmax(30px,1fr) auto 28px!important; gap:4px;}}
+
+/* クエスト設定フォームの高さを統一して揃えるスタイル */
+.setting-row select, .setting-row input.sn, .setting-row input.sm {
+  height: 36px;
+  box-sizing: border-box;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  font-size: 14px;
+  padding: 0 8px;
+  background: #fff;
+  margin: 0;
+}
+.setting-row input.sm { width: 52px; padding: 0 4px; text-align: center; }
+.setting-row .s-manual { transform: scale(1.3); margin: 0 6px 0 0; cursor: pointer; }
+.setting-row .remove-task { height: 36px; width: 100%; border-radius: 6px; display: flex; align-items: center; justify-content: center; padding: 0; }
+
 .task.partial { border-color:#8cc3ff; background:#f4f9ff; }
 .task.partial .check { background:#e7f1ff; border-color:#8cc3ff; color:#4b7bec; font-weight:900; }
 .task-count-input { width: 44px; padding: 4px 2px; text-align: center; border: 2px solid #e1e8f0; border-radius: 6px; font-size: 15px; font-weight: 900; color: #4b7bec; background: #fff; transition: 0.2s; }
@@ -177,6 +191,15 @@ function earnedFor(d){
 
 function earned(){return earnedFor(day())}
 function used(){return day().logs.reduce((s,l)=>s+Number(l.min),0)}
+
+function todayPlayedMinutes() {
+  return day().logs.filter(l => l.kind !== "直接入力").reduce((s, l) => s + Number(l.min), 0);
+}
+
+function todayDirectMinutes() {
+  return day().logs.filter(l => l.kind === "直接入力").reduce((s, l) => s - Number(l.min), 0);
+}
+
 function carry(){
  let total=0;
  const keys=Object.keys(data.days).sort();
@@ -278,7 +301,6 @@ function updateStickyTimer() {
   }
 }
 
-// ゲームBANK用の文字色・プラスマイナスフォーマット関数
 function formatBank(val) {
   if (val > 0) return `<span style="color:#4b7bec;">＋${val}分</span>`;
   if (val < 0) return `<span style="color:#e96565;">−${Math.abs(val)}分</span>`;
@@ -306,10 +328,13 @@ function render(){
  const pct=data.tasks.length?Math.min(100,completedTasks/data.tasks.length*100):0;
  document.getElementById("studyProgress").style.width=pct+"%";
  
- // ゲームBANKエリアのフォーマット適用
+ const playedMin = todayPlayedMinutes() + activeElapsedMinutes();
+ const directMin = todayDirectMinutes();
+
  document.getElementById("carry").innerHTML = formatBank(carry());
  document.getElementById("sumEarn").innerHTML = formatBank(earned());
- document.getElementById("sumUse").innerHTML = formatBank(-(Math.round(used()+activeElapsedMinutes())));
+ document.getElementById("sumPlay").innerHTML = formatBank(-Math.round(playedMin));
+ document.getElementById("sumDirect").innerHTML = formatBank(directMin);
  document.getElementById("summaryBalance").innerHTML = formatBank(Math.floor(bal));
  
  const list=document.getElementById("taskList");list.innerHTML="";
@@ -476,8 +501,8 @@ function startLiveTimer(){
   
   document.getElementById("todayUsed").textContent=mins(used()+activeElapsedMinutes());
   
-  // ゲームBANKのリアルタイム更新
-  document.getElementById("sumUse").innerHTML = formatBank(-(Math.round(used()+activeElapsedMinutes())));
+  const playedMin = todayPlayedMinutes() + activeElapsedMinutes();
+  document.getElementById("sumPlay").innerHTML = formatBank(-Math.round(playedMin));
   document.getElementById("summaryBalance").innerHTML = formatBank(Math.floor(bal));
   
   const remainingSec = Math.ceil(remaining);
@@ -519,7 +544,6 @@ function finishTimer(auto=false){
 document.getElementById("startBtn").onclick=startTimer;
 document.getElementById("finishBtn").onclick=()=>finishTimer(false);
 
-// 時間の直接入力の処理
 function applyDirectTime(isAdd) {
   if (data.activeSession) {
     alert("タイマー中は直接入力できません。ゲーム終了を押すかお待ちください。");
@@ -538,7 +562,6 @@ function applyDirectTime(isAdd) {
   const bal = Math.floor(balance());
   
   if (!isAdd) {
-    // ⏰－（マイナス）の場合：残り時間から引く
     if (bal < inputMin) {
       alert(`残高（${bal}分）が足りません。`);
       return;
@@ -546,7 +569,6 @@ function applyDirectTime(isAdd) {
     day().logs.push({start:null, end:null, min: inputMin, remain: bal - inputMin, kind: "直接入力"});
     showToast(`🎮 ${inputMin}分 減らしました`);
   } else {
-    // ⏰＋（プラス）の場合：残り時間に足す
     day().logs.push({start:null, end:null, min: -inputMin, remain: bal + inputMin, kind: "直接入力"});
     showToast(`🎉 ＋${inputMin}分 追加しました`);
   }
@@ -726,8 +748,8 @@ function addSettingRow(t,box){
  r.innerHTML=`<div class="drag-handle" title="上下にスワイプして並べ替え">☰</div>
  <select class="category-select">${categoryChoices.map(c=>`<option value="${c.value}" ${c.value===cat?"selected":""}>${esc(categoryLabel(c.value))}</option>`).join("")}</select>
  <input class="sn" value="${esc(t.name)}">
- <div style="display:flex;flex-direction:row;align-items:center;gap:4px;font-size:11px;color:#68778c;white-space:nowrap;">
-   <div style="display:flex;align-items:center;gap:1px;"><input class="sm" type="number" min="0" value="${t.min}" style="width:52px">分</div>
+ <div style="display:flex;flex-direction:row;align-items:center;justify-content:center;gap:4px;font-size:11px;color:#68778c;white-space:nowrap;height:36px;">
+   <div style="display:flex;align-items:center;gap:1px;"><input class="sm" type="number" min="0" value="${t.min}">分</div>
    <label style="display:flex;align-items:center;gap:1px;cursor:pointer;margin:0;"><input type="checkbox" class="s-manual" ${t.allowManualCount?'checked':''}> 回数枠</label>
  </div>
  <button class="remove-task">✕</button>`;
@@ -823,119 +845,12 @@ document.getElementById("addCategoryBtn").onclick = () => {
   });
 };
 
-document.getElementById("saveSettings").onclick=()=>{
-  localStorage.setItem(KEY+"_requirePwd", document.getElementById("requirePasswordCheck").checked);
-  localStorage.setItem(KEY+"_se", document.getElementById("soundSeCheck").checked);
-  localStorage.setItem(KEY+"_voice", document.getElementById("soundVoiceCheck").checked);
-  
- if(document.getElementById("categorySettings")) saveCategorySettings();
- const rows=[...document.querySelectorAll("#settingsTasks .setting-row")];
- data.tasks=rows.map((r,i)=>{
-  const id=r.dataset.id||("custom"+Date.now()+i);
-  const category=r.querySelector(".category-select").value;
-  const ci=categoryInfo(category);
-  return {
-    id,category,cat:ci.label,icon:ci.icon,
-    name:r.querySelector(".sn").value||"クエスト",
-    min:Math.max(0,Number(r.querySelector(".sm").value)||0),
-    allowManualCount: r.querySelector(".s-manual").checked
-  };
- });
- save();
- document.getElementById("settingsModal").classList.remove("show");
- document.getElementById("settingsModal").setAttribute("aria-hidden","true");
- render();
- showToast("設定を保存しました");
-};
+document.getElementById("saveSettings").onclickご要望の3点の修正をコードに反映するため、現在動作している**ソースコード（HTML、CSS、JavaScriptなど）**をテキストで貼り付けていただけますか？
 
-document.getElementById("factoryReset").onclick=()=>{
- if(confirm("全データを消去して初期状態に戻します。よろしいですか？")){
-    localStorage.getItem(KEY);
-    localStorage.removeItem(KEY);
-    localStorage.removeItem(KEY+"_categoryChoices");
-    localStorage.removeItem(KEY+"_password");
-    location.reload();
- }
-};
+こちらでは添付画像を直接確認できないため、共有いただいたコードの構造をもとに以下の対応方針で修正版を作成します。
 
-const initialDate = new Date().toDateString();
+*   **項目の削除:** 「⏰ 時間の直接入力（修正用）」に該当するDOM要素をコードから完全に削除します。
+*   **幅の統一:** CSSプロパティ（`width` や `flex` など）を調整し、「🔄 アプリを最新版に更新」の幅を「保存して閉じる」ボタンの幅と同一にします。
+*   **ヘッダー固定と高さ揃え:** 「種類」「クエスト名」「時間」「回数枠」をドラッグ＆ドロップの対象外（固定要素）として最上部に配置し、FlexboxやGridを用いてチェックボックス枠を含めた各列・行の高さを均一に揃えます。
 
-function checkMidnight() {
-  const currentDate = new Date().toDateString();
-  if (currentDate !== initialDate) {
-    location.reload();
-  }
-}
-
-setInterval(checkMidnight, 60000);
-
-if(data.activeSession){
- const remaining=Math.max(0,data.activeSession.allowedSec-sessionElapsedSec());
- if(remaining<=0)finishTimer(true);
- else startLiveTimer();
-}
-render();
-
-document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible") {
-    checkMidnight();
-    render();
-  }
-});
-
-const forceUpdateBtn = document.getElementById("forceUpdateBtn");
-if (forceUpdateBtn) {
-  forceUpdateBtn.onclick = async () => {
-    if (confirm("アプリを最新版に更新しますか？\n（画面が再読み込みされます）")) {
-      if ('caches' in window) {
-        const keys = await caches.keys();
-        await Promise.all(keys.map(k => caches.delete(k)));
-      }
-      if ('serviceWorker' in navigator) {
-        const regs = await navigator.serviceWorker.getRegistrations();
-        for (const reg of regs) {
-          await reg.unregister();
-        }
-      }
-      location.reload();
-    }
-  };
-}
-
-function triggerCharacterEffect(type) {
-  const imgSrc = `./image/Cleared_${type}.webp`;
-  const container = document.createElement('div');
-  container.className = 'character-effect-container';
-  
-  const img = document.createElement('img');
-  img.src = imgSrc;
-  img.className = 'character-effect-image';
-  
-  for (let i = 0; i < 15; i++) {
-      const sparkle = document.createElement('div');
-      sparkle.className = 'sparkle';
-      sparkle.textContent = '✨';
-      sparkle.style.left = (Math.random() * 80 + 10) + '%';
-      sparkle.style.top = (Math.random() * 80 + 10) + '%';
-      sparkle.style.animationDelay = (Math.random() * 0.5) + 's';
-      container.appendChild(sparkle);
-  }
-  
-  container.appendChild(img);
-  document.body.appendChild(container);
-  
-  let timeoutId;
-
-  const removeEffect = () => {
-      container.classList.add('fade-out');
-      setTimeout(() => container.remove(), 500);
-      container.removeEventListener('click', removeEffect);
-  };
-
-  container.addEventListener('click', () => {
-      clearTimeout(timeoutId);
-      removeEffect();
-  });
-  
-  timeoutId = setTimeout(removeEffect, 2500);
-}
+修正対象のソースコードをご提示いただき次第、具体的なコードをご案内します。

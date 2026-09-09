@@ -21,7 +21,6 @@
     <div id="todayLabel" class="date"></div>
   </div>
   <div style="display:flex; align-items:center; gap:8px;">
-    <!-- 追加した残り時間表示 -->
     <div id="stickyTimer" style="font-weight:900; color:#4b7bec; font-size:14px; background:#eef2f7; padding:6px 10px; border-radius:10px; display:none;">残り 0分</div>
     <button class="icon-btn" id="settingsBtn" aria-label="設定">⚙️</button>
   </div>
@@ -64,16 +63,14 @@
       <div class="quick-use">
         <div class="quick-title">直接入力</div>
         
-        <!-- ＋（プラス）の入力 -->
         <div class="direct-input-area" style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
-          <span style="font-size: 18px; font-weight: bold; width: 35px; text-align: center; color: #4b7bec;">⏰＋</span>
+          <img src="+.webp" alt="＋" style="width: 32px; height: 32px; object-fit: contain;">
           <input type="number" inputmode="numeric" id="directTimeAddInput" class="big-input" placeholder="分数" min="1" style="flex: 1; min-width: 0; padding: 10px;">
           <button class="big-btn primary" id="applyDirectAddBtn" style="width: auto; padding: 0 20px; white-space: nowrap;">追加</button>
         </div>
         
-        <!-- －（マイナス）の入力 -->
         <div class="direct-input-area" style="display: flex; gap: 8px; align-items: center;">
-          <span style="font-size: 18px; font-weight: bold; width: 35px; text-align: center; color: #e74c3c;">⏰－</span>
+          <img src="-.webp" alt="－" style="width: 32px; height: 32px; object-fit: contain;">
           <input type="number" inputmode="numeric" id="directTimeSubInput" class="big-input" placeholder="分数" min="1" style="flex: 1; min-width: 0; padding: 10px;">
           <button class="big-btn danger" id="applyDirectSubBtn" style="width: auto; padding: 0 20px; white-space: nowrap;">追加</button>
         </div>
@@ -103,7 +100,8 @@
       <h2>🏦 ゲームBANK</h2>
       <div class="summary-row"><span>昨日までの残り</span><b id="carry">0分</b></div>
       <div class="summary-row"><span>今日GET</span><b id="sumEarn">＋0分</b></div>
-      <div class="summary-row"><span>今日使用</span><b id="sumUse">−0分</b></div>
+      <div class="summary-row"><span>今日ゲームした時間</span><b id="sumPlay">−0分</b></div>
+      <div class="summary-row"><span>直接入力</span><b id="sumDirect">0分</b></div>
       <div class="summary-total"><span>現在の残高</span><strong id="summaryBalance">0分</strong></div>
     </section>
 
@@ -126,6 +124,19 @@
     <div class="modal-head"><h2>⚙️ 保護者設定</h2><button id="closeSettings" class="icon-btn">✕</button></div>
     
     <p class="hint">クエスト名・種類・獲得時間を変更できます。☰を上下にスワイプして並び順を変更できます。</p>
+    
+    <!-- 追加：クエスト一覧のヘッダー行 -->
+    <div class="setting-row" style="font-size:12px; font-weight:bold; color:#68778c; text-align:center; border-bottom:2px solid #e2e8f0; padding-bottom:6px; margin-bottom:10px;">
+      <div></div>
+      <div>種類</div>
+      <div>クエスト名</div>
+      <div style="display:flex; flex-direction:row; align-items:center; justify-content:center; gap:8px;">
+        <div style="width:50px; text-align:center;">時間</div>
+        <div style="width:60px; text-align:center;">回数枠</div>
+      </div>
+      <div></div>
+    </div>
+    
     <div id="settingsTasks"></div>
     <button class="big-btn primary" id="addTaskBtn" style="margin-bottom: 20px;">＋ クエストを追加</button>
 
@@ -165,28 +176,11 @@
         <button class="big-btn primary" id="savePasswordBtn" style="width: auto; padding: 0 20px; white-space: nowrap;">変更</button>
       </div>
     </div>
-    
-    <div class="manual-input-section" style="margin-top: 20px;">
-      <h3 style="margin-bottom: 10px;">⏰ 時間の直接入力（修正用）</h3>
-      
-      <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
-        <span style="font-size: 18px; font-weight: bold; width: 35px; text-align: center; color: #4b7bec;">⏰＋</span>
-        <input type="number" id="manualAddMin" placeholder="分数" style="flex: 1; min-width: 0;" min="1">
-        <button class="big-btn primary" id="manualAddBtn" style="width: auto; padding: 0 20px; white-space: nowrap;">追加</button>
-      </div>
-      
-      <div style="display: flex; gap: 8px; align-items: center;">
-        <span style="font-size: 18px; font-weight: bold; width: 35px; text-align: center; color: #e74c3c;">⏰－</span>
-        <input type="number" id="manualSubMin" placeholder="分数" style="flex: 1; min-width: 0;" min="1">
-        <button class="big-btn danger" id="manualSubBtn" style="width: auto; padding: 0 20px; white-space: nowrap;">追加</button>
-      </div>
-    </div>
 
-    <button class="big-btn primary" id="saveSettings" style="width:100%; margin-top:20px; font-size:16px;">保存して閉じる</button>
+    <!-- 削除された時間修正エリアはここにありました -->
 
-    <div class="settings-actions" style="margin-top:15px;">
-      <button class="big-btn primary" id="forceUpdateBtn" style="width: 100%; background:#fff; border:2px solid #e2e8f0; color:#4b7bec;">🔄 アプリを最新版に更新</button>
-    </div>
+    <button class="big-btn primary" id="saveSettings" style="width:100%; margin-top:30px; font-size:16px;">保存して閉じる</button>
+    <button class="big-btn primary" id="forceUpdateBtn" style="width:100%; margin-top:12px; background:#fff; border:2px solid #e2e8f0; color:#4b7bec;">🔄 アプリを最新版に更新</button>
 
     <div style="text-align:center; margin-top:30px;">
       <button id="factoryReset" style="background:none; border:none; color:#cbd5e0; font-size:12px; text-decoration:underline; cursor:pointer;">全データ初期化</button>
