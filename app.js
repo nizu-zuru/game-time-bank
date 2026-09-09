@@ -486,7 +486,13 @@ function renderWeek(){
  const max=Math.max(30,...rows.map(x=>x.value));
  document.getElementById("weekTotal").textContent=mins(rows.reduce((s,x)=>s+x.value,0));
  document.getElementById("weekChart").innerHTML=rows.map(x=>`<div class="bar-wrap"><div class="bar-value">${x.value}分</div><div class="bar ${x.today?"today":""}" style="height:${Math.max(4,x.value/max*125)}px"></div><div class="bar-label">${x.label}</div></div>`).join("");
- const total=rows.reduce((s,x)=>s+x.value,0),stars=Math.min(7,Math.floor(total/30));
+ const todayData=data.days[getLocalYMD(now)]||{done:[]};
+ const completedCount=data.tasks.filter(t=>{
+   const count=(todayData.done||[]).filter(x=>x===t.id).length;
+   return t.allowManualCount ? count>0 : count>=1;
+ }).length;
+ const completionRate=data.tasks.length ? completedCount/data.tasks.length : 0;
+ const stars=Math.min(7,Math.max(0,Math.round(completionRate*7)));
  document.getElementById("starRow").innerHTML=Array.from({length:7},(_,i)=>`<span class="star ${i<stars?"on":""}">⭐</span>`).join("");
 }
 
@@ -794,7 +800,7 @@ function addSettingRow(t,box){
  <input class="sn" value="${esc(t.name)}">
  <div style="display:flex;flex-direction:row;align-items:center;justify-content:center;gap:4px;font-size:11px;color:#68778c;white-space:nowrap;height:36px;">
    <div style="display:flex;align-items:center;gap:1px;"><input class="sm" type="number" min="0" value="${t.min}">分</div>
-   <label style="display:flex;align-items:center;gap:1px;cursor:pointer;margin:0;"><input type="checkbox" class="s-manual" ${t.allowManualCount?'checked':''}> 回数枠</label>
+   <label style="display:flex;align-items:center;justify-content:center;cursor:pointer;margin:0;width:60px;height:36px;" title="回数枠"><input type="checkbox" class="s-manual" ${t.allowManualCount?'checked':''}></label>
  </div>
  <button class="remove-task">✕</button>`;
  r.querySelector(".remove-task").onclick=()=>r.remove();
