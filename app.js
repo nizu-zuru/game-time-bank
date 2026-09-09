@@ -390,8 +390,10 @@ function render(){
         const totalTasks = data.tasks.length;
         if (newDoneCount === totalTasks) {
             playSound('./sound/se/perfect.opus', 'se');
+            showCharacterEffect('all');
         } else if ([2, 4, 6].includes(newDoneCount)) {
             playSound('./sound/se/clear.opus', 'se');
+            showCharacterEffect(newDoneCount);
         }
     }
 
@@ -425,6 +427,53 @@ function render(){
  });
  renderWeek();
  renderTimer();
+}
+
+function showCharacterEffect(clearCount) {
+  const imageMap = {
+    2: './image/Cleared_2.webp',
+    4: './image/Cleared_4.webp',
+    6: './image/Cleared_6.webp',
+    all: './image/Cleared_all.webp'
+  };
+  const imagePath = imageMap[clearCount];
+  if (!imagePath) return;
+
+  // 直前の演出が残っていた場合は一度削除してから表示
+  const old = document.querySelector('.character-effect-container');
+  if (old) old.remove();
+
+  const container = document.createElement('div');
+  container.className = 'character-effect-container';
+
+  const image = document.createElement('img');
+  image.className = 'character-effect-image';
+  image.src = imagePath;
+  image.alt = '';
+
+  // 画像そのものに「〇〇個クリア！」の文字が入っているため、追加の文字は表示しない
+  container.appendChild(image);
+
+  // キラキラを追加
+  ['✨','⭐','✨','🌟'].forEach((symbol, i) => {
+    const sparkle = document.createElement('div');
+    sparkle.className = 'sparkle';
+    sparkle.textContent = symbol;
+    sparkle.style.left = `${20 + i * 20}%`;
+    sparkle.style.top = `${18 + (i % 2) * 55}%`;
+    sparkle.style.animationDelay = `${i * 0.15}s`;
+    container.appendChild(sparkle);
+  });
+
+  const closeEffect = () => {
+    if (!container.isConnected) return;
+    container.classList.add('fade-out');
+    setTimeout(() => container.remove(), 500);
+  };
+
+  container.addEventListener('click', closeEffect);
+  document.body.appendChild(container);
+  setTimeout(closeEffect, 2200);
 }
 
 function renderWeek(){
