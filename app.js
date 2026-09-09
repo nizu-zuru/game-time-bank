@@ -44,6 +44,20 @@ customStyle.textContent = `
 document.head.appendChild(customStyle);
 
 const KEY="gameTimeBankV3";
+
+// --- 音声再生用の変数と関数 ---
+let lastPlayedVoice = null;
+let lastPlayed15Min = 0;
+
+function playSound(path, type) {
+  // 設定がOFFの場合は再生せずに終了
+  if (type === 'se' && localStorage.getItem(KEY+"_se") === "false") return;
+  if (type === 'voice' && localStorage.getItem(KEY+"_voice") === "false") return;
+  
+  const audio = new Audio(path);
+  audio.play().catch(e => console.log("音声再生エラー:", e));
+}
+
 const defaultTasks=[
  {id:"study1",cat:"🏫 学校",category:"study",icon:"🏫",name:"音・計・リ",min:10,allowManualCount:false},
  {id:"music1",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"カレリア(1回につき)",min:5,allowManualCount:true},
@@ -353,8 +367,10 @@ el.onclick=(e)=>{
     if (newDoneCount > prevDoneCount) {
         const totalTasks = data.tasks.length;
         if (newDoneCount === totalTasks) {
+            playSound('./sound/se/perfect.opus', 'se'); // ←追加 (条件10)
             triggerCharacterEffect('all');
         } else if ([2, 4, 6].includes(newDoneCount)) {
+            playSound('./sound/se/clear.opus', 'se');   // ←追加 (条件7,8,9)
             triggerCharacterEffect(newDoneCount);
         }
     }
@@ -444,6 +460,11 @@ function startTimer(){
  const bal=Math.floor(balance());
  if(bal<=0){alert("ゲーム時間がありません。クエストをクリアして時間をGETしましょう！");return}
  data.activeSession={startAt:Date.now(),allowedSec:bal*60};
+ 
+ lastPlayedVoice = null; // リセット
+ lastPlayed15Min = 0;    // リセット
+ playSound('./sound/voice/start.opus', 'voice'); // ←追加 (条件1)
+ 
  save(); showToast(`🎮 ${bal}分スタート！`); render(); startLiveTimer();
 }
 
@@ -462,6 +483,22 @@ function startLiveTimer(){
   document.getElementById("todayUsed").textContent=mins(used()+activeElapsedMinutes());
   document.getElementById("sumUse").textContent=`−${Math.round(used()+activeElapsedMinutes())}分`;
   document.getElementById("summaryBalance").textContent=mins(bal);
+  
+  // --- ここから追加：残り時間と経過時間のチェック ---
+  const remainingSec = Math.ceil(remaining);
+  if (remainingSec === 1800 && lastPlayedVoice !== 1800) { playSound('./sound/voice/nokori30hun.opus', 'voice'); lastPlayedVoice = 1800; }
+  else if (remainingSec === 600 && lastPlayedVoice !== 600) { playSound('./sound/voice/nokori10hun.opus', 'voice'); lastPlayedVoice = 600; }
+  else if (remainingSec === 300 && lastPlayedVoice !== 300) { playSound('./sound/voice/nokori5hun.opus', 'voice'); lastPlayedVoice = 300; }
+  else if (remainingSec === 60 && lastPlayedVoice !== 60) { playSound('./sound/voice/nokori1hun.opus', 'voice'); lastPlayedVoice = 60; }
+  
+  const elapsed = Math.floor(sessionElapsedSec());
+  const elapsed15MinCount = Math.floor(elapsed / 900);
+  if (elapsed15MinCount > 0 && elapsed15MinCount > lastPlayed15Min) {
+      playSound('./sound/se/pikon_15hun.opus', 'se');
+      lastPlayed15Min = elapsed15MinCount;
+  }
+  // --- ここまで追加 ---
+  
   if(remaining<=0)finishTimer(true);
  },250);
 }
@@ -477,6 +514,10 @@ function finishTimer(auto=false){
   const remainAfter=Math.max(0,Math.floor(carry()+earned()-used()-useMin));
   day().logs.push({start,end,min:useRounded,remain:remainAfter,kind:auto?"タイマー（自動終了）":"タイマー"});
  }
+ 
+ // ←ここに追加 (条件6)
+ if (auto) playSound('./sound/voice/finish.opus', 'voice');
+ 
  save();clearInterval(timerInterval);timerInterval=null;render();
  document.getElementById("timerNote").textContent=auto?"⏰ ゲーム時間を使い切りました！":"ゲーム終了。おつかれさま！";
  showToast(auto?"⏰ ゲーム時間終了！":`🎮 −${useRounded}分 使用`);
@@ -585,13 +626,20 @@ function setupRelocatedResetButtons() {
 setTimeout(setupRelocatedResetButtons, 100);
 
 document.getElementById("settingsBtn").onclick = () => {
-  const currentPwd = localStorage.getItem(KEY+"_password") || "0000";
-  const input = prompt("保護者用パスワードを入力してください。\n（初期パスワードは 0000 です）");
+  playSound('./sound/se/pi_memu.opus', 'se'); // SEとして鳴らす
   
-  if (input === null) return;
-  if (input !== currentPwd) {
-    alert("パスワードが違います。");
-    return;
+  // パスワードを要求する設定かチェック（初期値はtrue）
+  const requirePwd = localStorage.getItem(KEY+"_requirePwd") !== "false";
+  
+  if (requirePwd) {
+    const currentPwd = localStorage.getItem(KEY+"_password") || "0000";
+    const input = prompt("保護者用パスワードを入力してください。\n（初期パスワードは 0000 です）");
+    
+    if (input === null) return;
+    if (input !== currentPwd) {
+      alert("パスワードが違います。");
+      return;
+    }
   }
   
   openSettings();
@@ -605,6 +653,11 @@ function openSettings(){
  
  const currentPwd = localStorage.getItem(KEY+"_password") || "0000";
  document.getElementById("parentPassword").value = currentPwd;
+ 
+ // 追加：チェックボックスの現在の状態を読み込んでチェックを入れる
+  document.getElementById("requirePasswordCheck").checked = (localStorage.getItem(KEY+"_requirePwd") !== "false");
+  document.getElementById("soundSeCheck").checked = (localStorage.getItem(KEY+"_se") !== "false");
+  document.getElementById("soundVoiceCheck").checked = (localStorage.getItem(KEY+"_voice") !== "false");
  
  const modal=document.getElementById("settingsModal");
  modal.classList.add("show"); modal.setAttribute("aria-hidden","false");
@@ -777,6 +830,11 @@ document.getElementById("addCategoryBtn").onclick = () => {
 };
 
 document.getElementById("saveSettings").onclick=()=>{
+ // チェックボックスの状態を保存
+  localStorage.setItem(KEY+"_requirePwd", document.getElementById("requirePasswordCheck").checked);
+  localStorage.setItem(KEY+"_se", document.getElementById("soundSeCheck").checked);
+  localStorage.setItem(KEY+"_voice", document.getElementById("soundVoiceCheck").checked);
+  // --- ここまで追加 ---
  if(document.getElementById("categorySettings")) saveCategorySettings();
  const rows=[...document.querySelectorAll("#settingsTasks .setting-row")];
  data.tasks=rows.map((r,i)=>{

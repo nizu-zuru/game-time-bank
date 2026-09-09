@@ -1,4 +1,4 @@
-const CACHE="game-time-bank-v21";
+const CACHE="game-time-bank-v22";
 const ASSETS=[
   "./",
   "./index.html",
@@ -10,7 +10,17 @@ const ASSETS=[
   "./image/Cleared_2.webp",
   "./image/Cleared_4.webp",
   "./image/Cleared_6.webp",
-  "./image/Cleared_all.webp"
+  "./image/Cleared_all.webp",
+  "./sound/se/clear.opus",
+  "./sound/se/perfect.opus",
+  "./sound/se/pi_memu.opus",
+  "./sound/se/pikon_15hun.opus",
+  "./sound/voice/finish.opus",
+  "./sound/voice/nokori1hun.opus",
+  "./sound/voice/nokori5hun.opus",
+  "./sound/voice/nokori10hun.opus",
+  "./sound/voice/nokori30hun.opus",
+  "./sound/voice/start.opus"
 ];
 self.addEventListener("install",e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));
 self.addEventListener("activate",e=>e.waitUntil(self.clients.claim()));
