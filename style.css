@@ -32,3 +32,43 @@
 .direct-input-area { display: flex; gap: 8px; margin-top: 8px; }
 .big-input { flex-grow: 1; min-height: 50px; border: 2px solid #e5eaf1; border-radius: 14px; font-size: 16px; font-weight: 900; padding: 10px 15px; color: #34435a; background: #fff; width: 100%; box-sizing: border-box; }
 .big-input:focus { outline: none; border-color: #4b7bec; background: #f4f9ff; }
+
+/* --- キャラクター出現エフェクト用CSS --- */
+.character-effect-container {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  pointer-events: none; /* 画面のタップを邪魔しないようにする */
+}
+.character-effect-image {
+  max-width: 80%;
+  max-height: 80%;
+  animation: bounceIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.8));
+}
+.sparkle {
+  position: absolute;
+  font-size: 40px;
+  opacity: 0;
+  animation: twinkle 1s ease-in-out infinite alternate;
+}
+.character-effect-container.fade-out {
+  animation: fadeOut 0.5s forwards;
+}
+
+@keyframes bounceIn {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes twinkle {
+  0% { transform: scale(0) rotate(0deg); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: scale(1.5) rotate(180deg); opacity: 0; }
+}
+@keyframes fadeOut {
+  to { opacity: 0; transform: scale(1.1); }
+}

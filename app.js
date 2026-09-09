@@ -321,9 +321,15 @@ function render(){
 
   el.innerHTML=`<div class="task-icon task-cat ${cc}">${esc(t.icon||"📝")}</div><div class="check" aria-label="完了">${checkHtml}</div><div style="flex-grow:1;min-width:0;overflow:hidden;"><div class="task-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(t.name)}</div><div class="task-cat-text">${esc(taskCategoryText(t))}</div></div><div class="task-right-area">${rightAreaHtml}</div>`;
   
-  el.onclick=(e)=>{
+el.onclick=(e)=>{
     if(e.target.tagName === 'INPUT') return;
     
+    // 変更点：クリック前のクリア数を計算しておく
+    const prevDoneCount = data.tasks.filter(task => {
+       const c = day().done.filter(x => x === task.id).length;
+       return task.allowManualCount ? c > 0 : c >= 1;
+    }).length;
+
     if(t.allowManualCount){
       day().done.push(t.id);
       showToast(`🎉 ＋${t.min}分 GET！ (計${count+1}回)`);
@@ -336,6 +342,23 @@ function render(){
         showToast(`🎉 クエスト完了！ ＋${t.min}分`);
       }
     }
+
+    // 変更点：クリック後のクリア数を計算
+    const newDoneCount = data.tasks.filter(task => {
+       const c = day().done.filter(x => x === task.id).length;
+       return task.allowManualCount ? c > 0 : c >= 1;
+    }).length;
+
+    // 新しくクリア数が増えた場合のみ、エフェクトを判定して呼び出す
+    if (newDoneCount > prevDoneCount) {
+        const totalTasks = data.tasks.length;
+        if (newDoneCount === totalTasks) {
+            triggerCharacterEffect('all');
+        } else if ([2, 4, 6].includes(newDoneCount)) {
+            triggerCharacterEffect(newDoneCount);
+        }
+    }
+
     save();render();
   };
   list.appendChild(el);
@@ -813,3 +836,38 @@ document.addEventListener("visibilitychange", () => {
     render();
   }
 });
+
+/* --- キラキラ＆キャラクター出現エフェクト --- */
+function triggerCharacterEffect(type) {
+  // 指定されたフォルダから画像を読み込む
+  const imgSrc = `./image/Cleared_${type}.webp`;
+  
+  // エフェクト用のコンテナを作成
+  const container = document.createElement('div');
+  container.className = 'character-effect-container';
+  
+  // キャラクター画像
+  const img = document.createElement('img');
+  img.src = imgSrc;
+  img.className = 'character-effect-image';
+  
+  // キラキラ（✨）を15個ランダムな位置に散りばめる
+  for (let i = 0; i < 15; i++) {
+      const sparkle = document.createElement('div');
+      sparkle.className = 'sparkle';
+      sparkle.textContent = '✨';
+      sparkle.style.left = (Math.random() * 80 + 10) + '%';
+      sparkle.style.top = (Math.random() * 80 + 10) + '%';
+      sparkle.style.animationDelay = (Math.random() * 0.5) + 's';
+      container.appendChild(sparkle);
+  }
+  
+  container.appendChild(img);
+  document.body.appendChild(container);
+  
+  // 2.5秒後にフェードアウトして削除
+  setTimeout(() => {
+      container.classList.add('fade-out');
+      setTimeout(() => container.remove(), 500);
+  }, 2500);
+}
