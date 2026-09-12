@@ -1,8 +1,8 @@
-const APP_VERSION="V30";
+const APP_VERSION="V32";
 const customStyle = document.createElement('style');
 customStyle.textContent = `
-.setting-row{display:grid; grid-template-columns:30px 110px minmax(0,1fr) 110px 34px!important; gap:6px; align-items:center; margin-bottom:8px;}
-@media(max-width:520px){.setting-row{grid-template-columns:24px 75px minmax(0,1fr) 90px 28px!important; gap:4px;}}
+.setting-row{display:grid; grid-template-columns:30px 110px minmax(0,1fr) 58px 70px 34px!important; gap:6px; align-items:center; margin-bottom:8px;}
+@media(max-width:520px){.setting-row{grid-template-columns:24px 72px minmax(0,1fr) 54px 54px 28px!important; gap:4px;}}
 
 .setting-row select, .setting-row input.sn, .setting-row input.sm {
   height: 36px;
@@ -15,11 +15,18 @@ customStyle.textContent = `
   margin: 0;
 }
 .setting-row input.sm { width: 52px; padding: 0 4px; text-align: center; }
-.setting-row .s-manual { transform: scale(1.3); margin: 0 6px 0 0; cursor: pointer; }
+.setting-row .s-manual { transform: scale(1.2); margin: 0; cursor: pointer; }
+.setting-time-cell{display:flex;align-items:center;justify-content:center;gap:2px;min-width:0;height:36px;font-size:11px;color:#68778c;white-space:nowrap;}
+.setting-time-cell .sm{width:44px!important;min-width:0;}
+.setting-count-cell{display:flex;align-items:center;justify-content:center;cursor:pointer;margin:0;height:36px;min-width:0;}
+.setting-count-cell input{width:auto!important;padding:0!important;border:0!important;}
 .setting-row .remove-task { height: 36px; width: 100%; border-radius: 6px; display: flex; align-items: center; justify-content: center; padding: 0; }
 
 .task.partial { border-color:#8cc3ff; background:#f4f9ff; }
 .task.partial .check { background:#e7f1ff; border-color:#8cc3ff; color:#4b7bec; font-weight:900; }
+.manual-check{min-width:42px;min-height:42px;display:flex;align-items:center;justify-content:center;border-radius:10px;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+.manual-check:active{transform:scale(.92);}
+
 .task-count-input { width: 44px; padding: 4px 2px; text-align: center; border: 2px solid #e1e8f0; border-radius: 6px; font-size: 15px; font-weight: 900; color: #4b7bec; background: #fff; transition: 0.2s; }
 .task-count-input:focus { outline: none; border-color: #4b7bec; background: #f4f9ff; }
 .manual-input-wrap { display: flex; align-items: center; gap: 3px; flex-shrink: 0; }
@@ -61,14 +68,42 @@ const KEY="gameTimeBankV3";
 let lastPlayedVoice = null;
 let lastPlayed15Min = 0;
 
+const voiceAudioCache = {};
+const VOICE_ASSETS = [
+  './sound/voice/start.opus',
+  './sound/voice/nokori30hun.opus',
+  './sound/voice/nokori10hun.opus',
+  './sound/voice/nokori5hun.opus',
+  './sound/voice/nokori1hun.opus',
+  './sound/voice/stop.opus',
+  './sound/voice/30min_passed.opus',
+  './sound/voice/60min_passed.opus',
+  './sound/voice/finish.opus'
+];
+
+function preloadVoiceAssets() {
+  VOICE_ASSETS.forEach(path => {
+    if (!voiceAudioCache[path]) {
+      const audio = new Audio();
+      audio.preload = 'auto';
+      audio.src = path;
+      audio.load();
+      voiceAudioCache[path] = audio;
+    }
+  });
+}
+
 function playSound(path, type) {
   if (type === 'se' && localStorage.getItem(KEY+"_se") === "false") return;
   if (type === 'voice' && localStorage.getItem(KEY+"_voice") === "false") return;
-  
-  const audio = new Audio(path);
-  audio.play().catch(e => console.log("音声再生エラー:", e));
-}
 
+  const audio = voiceAudioCache[path] || new Audio(path);
+  audio.currentTime = 0;
+  const p = audio.play();
+  if (p && typeof p.catch === 'function') {
+    p.catch(e => console.log("音声再生エラー:", path, e));
+  }
+}
 const defaultTasks=[
  {id:"study1",cat:"🏫 学校",category:"study",icon:"🏫",name:"音・計・リ",min:10,allowManualCount:false},
  {id:"music1",cat:"🎹 音楽教室",category:"music",icon:"🎹",name:"カレリア(1回につき)",min:5,allowManualCount:true},
@@ -85,6 +120,8 @@ let data=JSON.parse(localStorage.getItem(KEY)||"null")||{tasks:defaultTasks,days
 if(!data.tasks)data.tasks=defaultTasks;
 if(!data.days)data.days={};
 if(!Object.prototype.hasOwnProperty.call(data,"activeSession"))data.activeSession=null;
+if(data.activeSession && !data.activeSession.voiceMilestones) data.activeSession.voiceMilestones={};
+preloadVoiceAssets();
 
 let categoryChoices = JSON.parse(localStorage.getItem(KEY+"_categoryChoices"));
 if(!categoryChoices || categoryChoices.length === 0) {
@@ -346,7 +383,7 @@ function render(){
   const el=document.createElement("div");
   el.className="task cat-"+cc+(done?" done":"");
   
-  const checkHtml = done ? "✓" : "";
+  const checkHtml = done ? "✅" : "";
 
   let rightAreaHtml = "";
   if (t.allowManualCount) {
@@ -359,10 +396,31 @@ function render(){
     rightAreaHtml = `<div class="points" style="text-align:right;line-height:1.2;">＋${t.min}分</div>`;
   }
 
-  el.innerHTML=`<div class="task-icon task-cat ${cc}">${esc(t.icon||"📝")}</div><div class="check" aria-label="完了">${checkHtml}</div><div style="flex-grow:1;min-width:0;overflow:hidden;"><div class="task-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(t.name)}</div><div class="task-cat-text">${esc(taskCategoryText(t))}</div></div><div class="task-right-area">${rightAreaHtml}</div>`;
+  el.innerHTML=`<div class="task-icon task-cat ${cc}">${esc(t.icon||"📝")}</div><div class="check${t.allowManualCount?" manual-check":""}" aria-label="${t.allowManualCount?"チェックをON/OFF":"完了"}">${checkHtml}</div><div style="flex-grow:1;min-width:0;overflow:hidden;"><div class="task-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(t.name)}</div><div class="task-cat-text">${esc(taskCategoryText(t))}</div></div><div class="task-right-area">${rightAreaHtml}</div>`;
+
+  if(t.allowManualCount){
+    const checkEl=el.querySelector(".manual-check");
+    checkEl.style.cursor="pointer";
+    checkEl.title="タップでON/OFF";
+    checkEl.onclick=(e)=>{
+      e.preventDefault();
+      e.stopPropagation();
+      const currentCount=day().done.filter(x=>x===t.id).length;
+      if(currentCount>0){
+        day().done=day().done.filter(x=>x!==t.id);
+        showToast("チェックをOFFにしました（0回）");
+      }else{
+        day().done.push(t.id);
+        showToast(`🎉 ＋${t.min}分 GET！ (計1回)`);
+      }
+      save();
+      render();
+    };
+  }
   
   el.onclick=(e)=>{
     if(e.target.tagName === 'INPUT') return;
+    if(e.target.closest(".manual-check")) return;
     
     const prevDoneCount = data.tasks.filter(task => {
        const c = day().done.filter(x => x === task.id).length;
@@ -527,70 +585,118 @@ function renderTimer(){
  if(remaining<=0)finishTimer(true);
 }
 
+function markVoiceMilestones(elapsedSec) {
+  const s = data.activeSession;
+  if (!s) return;
+
+  // Threshold crossing is used instead of exact-second matching.
+  // This also catches thresholds after iPhone/iPad background throttling.
+  const remainingSec = Math.max(0, s.allowedSec - elapsedSec);
+  const remainingVoices = [
+    { sec: 1800, path: './sound/voice/nokori30hun.opus' },
+    { sec: 600,  path: './sound/voice/nokori10hun.opus' },
+    { sec: 300,  path: './sound/voice/nokori5hun.opus' },
+    { sec: 60,   path: './sound/voice/nokori1hun.opus' }
+  ];
+
+  if (!s.voiceMilestones) s.voiceMilestones = {};
+
+  remainingVoices.forEach(item => {
+    if (s.allowedSec >= item.sec &&
+        remainingSec <= item.sec &&
+        !s.voiceMilestones['remain_'+item.sec]) {
+      playSound(item.path, 'voice');
+      s.voiceMilestones['remain_'+item.sec] = true;
+    }
+  });
+
+  const elapsedVoices = [
+    { sec: 1800, path: './sound/voice/30min_passed.opus' },
+    { sec: 3600, path: './sound/voice/60min_passed.opus' }
+  ];
+
+  elapsedVoices.forEach(item => {
+    if (s.allowedSec >= item.sec &&
+        elapsedSec >= item.sec &&
+        !s.voiceMilestones['elapsed_'+item.sec]) {
+      playSound(item.path, 'voice');
+      s.voiceMilestones['elapsed_'+item.sec] = true;
+    }
+  });
+}
+
 function startTimer(){
- if(data.activeSession){renderTimer();return}
- const bal=Math.floor(balance());
- if(bal<=0){alert("ゲーム時間がありません。クエストをクリアして時間をGETしましょう！");return}
- data.activeSession={startAt:Date.now(),allowedSec:bal*60};
- 
- lastPlayedVoice = null;
- lastPlayed15Min = 0;
- playSound('./sound/voice/start.opus', 'voice');
- 
- save(); showToast(`🎮 ${bal}分スタート！`); render(); startLiveTimer();
+  if(data.activeSession){renderTimer();return}
+  const bal=Math.floor(balance());
+  if(bal<=0){alert("ゲーム時間がありません。クエストをクリアして時間をGETしましょう！");return}
+
+  data.activeSession={
+    startAt:Date.now(),
+    allowedSec:bal*60,
+    voiceMilestones:{}
+  };
+
+  lastPlayedVoice = null;
+  lastPlayed15Min = 0;
+
+  // Start button is a user gesture on iPhone/iPad, so preload the voice files here.
+  preloadVoiceAssets();
+  playSound('./sound/voice/start.opus', 'voice');
+
+  save(); showToast(`🎮 ${bal}分スタート！`); render(); startLiveTimer();
 }
 
 function startLiveTimer(){
- clearInterval(timerInterval);
- timerInterval=setInterval(()=>{
-  if(!data.activeSession){clearInterval(timerInterval);return}
-  const remaining=Math.max(0,data.activeSession.allowedSec-sessionElapsedSec());
-  document.getElementById("timer").textContent=timerText(remaining);
-  
-  const bal=balance();
-  updateBalanceDisplay(bal);
-  updateStickyTimer();
-  
-  document.getElementById("todayUsed").textContent=mins(used()+activeElapsedMinutes());
-  
-  const playedMin = todayPlayedMinutes() + activeElapsedMinutes();
-  document.getElementById("sumPlay").innerHTML = formatBank(-Math.round(playedMin));
-  document.getElementById("summaryBalance").innerHTML = formatBank(Math.floor(bal));
-  
-  const remainingSec = Math.ceil(remaining);
-  if (remainingSec === 1800 && lastPlayedVoice !== 1800) { playSound('./sound/voice/nokori30hun.opus', 'voice'); lastPlayedVoice = 1800; }
-  else if (remainingSec === 600 && lastPlayedVoice !== 600) { playSound('./sound/voice/nokori10hun.opus', 'voice'); lastPlayedVoice = 600; }
-  else if (remainingSec === 300 && lastPlayedVoice !== 300) { playSound('./sound/voice/nokori5hun.opus', 'voice'); lastPlayedVoice = 300; }
-  else if (remainingSec === 60 && lastPlayedVoice !== 60) { playSound('./sound/voice/nokori1hun.opus', 'voice'); lastPlayedVoice = 60; }
-  
-  const elapsed = Math.floor(sessionElapsedSec());
-  const elapsed15MinCount = Math.floor(elapsed / 900);
-  if (elapsed15MinCount > 0 && elapsed15MinCount > lastPlayed15Min) {
+  clearInterval(timerInterval);
+  timerInterval=setInterval(()=>{
+    if(!data.activeSession){clearInterval(timerInterval);return}
+
+    const elapsedSec=sessionElapsedSec();
+    const remaining=Math.max(0,data.activeSession.allowedSec-elapsedSec);
+    document.getElementById("timer").textContent=timerText(remaining);
+
+    const bal=balance();
+    updateBalanceDisplay(bal);
+    updateStickyTimer();
+
+    document.getElementById("todayUsed").textContent=mins(used()+activeElapsedMinutes());
+
+    const playedMin = todayPlayedMinutes() + activeElapsedMinutes();
+    document.getElementById("sumPlay").innerHTML = formatBank(-Math.round(playedMin));
+    document.getElementById("summaryBalance").innerHTML = formatBank(Math.floor(bal));
+
+    markVoiceMilestones(elapsedSec);
+
+    const elapsed = Math.floor(elapsedSec);
+    const elapsed15MinCount = Math.floor(elapsed / 900);
+    if (elapsed15MinCount > 0 && elapsed15MinCount > lastPlayed15Min) {
       playSound('./sound/se/pikon_15hun.opus', 'se');
       lastPlayed15Min = elapsed15MinCount;
-  }
-  
-  if(remaining<=0)finishTimer(true);
- },250);
+    }
+
+    if(remaining<=0)finishTimer(true);
+  },250);
 }
 
 function finishTimer(auto=false){
- const s=data.activeSession;if(!s)return;
- const elapsedSec=sessionElapsedSec();
- const useMin = Math.min(s.allowedSec/60, Math.max(1/60, elapsedSec/60));
- const useRounded = Math.round(useMin * 10) / 10;
- const start=s.startAt,end=Date.now();
- data.activeSession=null;
- if(useMin>0){
-  const remainAfter=Math.max(0,Math.floor(carry()+earned()-used()-useMin));
-  day().logs.push({start,end,min:useRounded,remain:remainAfter,kind:auto?"タイマー（自動終了）":"タイマー"});
- }
- 
- if (auto) playSound('./sound/voice/finish.opus', 'voice');
- 
- save();clearInterval(timerInterval);timerInterval=null;render();
- document.getElementById("timerNote").textContent=auto?"⏰ ゲーム時間を使い切りました！":"ゲーム終了。おつかれさま！";
- showToast(auto?"⏰ ゲーム時間終了！":`🎮 −${useRounded}分 使用`);
+  const s=data.activeSession;if(!s)return;
+  const elapsedSec=sessionElapsedSec();
+  const useMin = Math.min(s.allowedSec/60, Math.max(1/60, elapsedSec/60));
+  const useRounded = Math.round(useMin * 10) / 10;
+  const start=s.startAt,end=Date.now();
+  data.activeSession=null;
+  if(useMin>0){
+    const remainAfter=Math.max(0,Math.floor(carry()+earned()-used()-useMin));
+    day().logs.push({start,end,min:useRounded,remain:remainAfter,kind:auto?"タイマー（自動終了）":"タイマー"});
+  }
+
+  // Manual "ゲーム終了" uses the requested stop voice.
+  // Automatic exhaustion keeps the existing finish voice.
+  playSound(auto ? './sound/voice/finish.opus' : './sound/voice/stop.opus', 'voice');
+
+  save();clearInterval(timerInterval);timerInterval=null;render();
+  document.getElementById("timerNote").textContent=auto?"⏰ ゲーム時間を使い切りました！":"ゲーム終了。おつかれさま！";
+  showToast(auto?"⏰ ゲーム時間終了！":`🎮 −${useRounded}分 使用`);
 }
 
 document.getElementById("startBtn").onclick=startTimer;
@@ -799,10 +905,8 @@ function addSettingRow(t,box){
  r.innerHTML=`<div class="drag-handle" title="上下にスワイプして並べ替え">☰</div>
  <select class="category-select">${categoryChoices.map(c=>`<option value="${c.value}" ${c.value===cat?"selected":""}>${esc(categoryLabel(c.value))}</option>`).join("")}</select>
  <input class="sn" value="${esc(t.name)}">
- <div style="display:flex;flex-direction:row;align-items:center;justify-content:center;gap:4px;font-size:11px;color:#68778c;white-space:nowrap;height:36px;width:100%;min-width:0;">
-   <div style="display:flex;align-items:center;gap:1px;flex-shrink:0;"><input class="sm" type="number" min="0" value="${t.min}">分</div>
-   <label style="display:flex;align-items:center;justify-content:center;cursor:pointer;margin:0;width:32px;height:36px;flex-shrink:0;" title="回数枠"><input type="checkbox" class="s-manual" ${t.allowManualCount?'checked':''}></label>
- </div>
+ <div class="setting-time-cell"><input class="sm" type="number" min="0" value="${t.min}"><span>分</span></div>
+ <label class="setting-count-cell" title="回数枠"><input type="checkbox" class="s-manual" ${t.allowManualCount?'checked':''}></label>
  <button class="remove-task">✕</button>`;
  r.querySelector(".remove-task").onclick=()=>r.remove();
  
