@@ -1,4 +1,4 @@
-const CACHE="game-time-bank-v32";
+const CACHE="game-time-bank-v30";
 const ASSETS=[
   "./",
   "./index.html",
@@ -22,10 +22,7 @@ const ASSETS=[
   "./sound/voice/nokori5hun.opus",
   "./sound/voice/nokori10hun.opus",
   "./sound/voice/nokori30hun.opus",
-  "./sound/voice/30min_passed.opus",
-  "./sound/voice/60min_passed.opus",
-  "./sound/voice/start.opus",
-  "./sound/voice/stop.opus"
+  "./sound/voice/start.opus"
 ];
 self.addEventListener("install",e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));
 self.addEventListener("activate",e=>e.waitUntil(self.clients.claim()));

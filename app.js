@@ -1,4 +1,4 @@
-const APP_VERSION="V32";
+const APP_VERSION="V33";
 const customStyle = document.createElement('style');
 customStyle.textContent = `
 .setting-row{display:grid; grid-template-columns:30px 110px minmax(0,1fr) 58px 70px 34px!important; gap:6px; align-items:center; margin-bottom:8px;}
@@ -295,27 +295,25 @@ function cleanUpOldLayout() {
   }
 }
 
-function updateBalanceDisplay(bal) {
-  cleanUpOldLayout();
-  const balEl = document.getElementById("balance");
-  if (!balEl) return;
-  
-  if (bal > 0) {
-     balEl.innerHTML = `
-       <div style="display:flex; align-items:baseline; justify-content:center; flex-wrap:wrap; margin-bottom: 6px;">
-         <span style="font-size:14px; font-weight:normal; margin-right:4px; opacity:0.9;">あと</span>
-         <span style="font-size:48px; line-height:1; font-weight:900; margin:0 3px;">${Math.floor(bal)}<span style="font-size:36px; font-weight:bold; margin-left:4px;">分</span></span>
-         <span style="font-size:14px; font-weight:normal; margin-left:4px; opacity:0.9;">ゲームできるよ！</span>
-       </div>
-     `;
-  } else {
-     balEl.innerHTML = `
-       <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; margin-bottom: 6px;">
-         <span style="font-size:14px; font-weight:normal; opacity:0.9;">クエストをして時間をGETしよう！</span>
-         <span style="font-size:48px; line-height:1; font-weight:900;">0<span style="font-size:36px; font-weight:bold; margin-left:4px;">分</span></span>
-       </div>
-     `;
+function updateBalanceDisplay(bal){
+  const safeBal=Math.max(0, Number(bal)||0);
+
+  // 「残りゲーム時間」はゲーム中だけカウントダウン表示。
+  // ゲーム終了後は銀行に残っている時間を再表示する。
+  if(!data.activeSession){
+    const timerEl=document.getElementById("timer");
+    if(timerEl){
+      const totalSec=Math.max(0, Math.round(safeBal*60));
+      const mm=Math.floor(totalSec/60);
+      const ss=totalSec%60;
+      timerEl.textContent=String(mm).padStart(2,"0")+":"+String(ss).padStart(2,"0");
+    }
   }
+
+  // 既存の残高表示処理を安全に更新
+  document.querySelectorAll(".balance-value,[data-balance-display]").forEach(el=>{
+    el.textContent=formatBank(safeBal);
+  });
 }
 
 function updateStickyTimer() {
@@ -486,6 +484,15 @@ function render(){
  });
  renderWeek();
  renderTimer();
+
+  // V33: restore remaining game time after rendering when no session is active.
+  if(!data.activeSession){
+    const timerEl=document.getElementById("timer");
+    if(timerEl){
+      const totalSec=Math.max(0, Math.round(Math.max(0, Number(balance())||0)*60));
+      timerEl.textContent=String(Math.floor(totalSec/60)).padStart(2,"0")+":"+String(totalSec%60).padStart(2,"0");
+    }
+  }
 }
 
 function showCharacterEffect(clearCount) {
