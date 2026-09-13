@@ -1,4 +1,4 @@
-const APP_VERSION="V33";
+const APP_VERSION="V34";
 const customStyle = document.createElement('style');
 customStyle.textContent = `
 .setting-row{display:grid; grid-template-columns:30px 110px minmax(0,1fr) 58px 70px 34px!important; gap:6px; align-items:center; margin-bottom:8px;}
@@ -210,6 +210,56 @@ function getLocalYMD(d) {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 const todayKey=()=>getLocalYMD(new Date());
+
+/*
+ * 日付変更対策
+ * - 23:59 → 00:00 の日付変更時は画面を自動更新
+ * - スリープ／バックグラウンド復帰時に日付が変わっていれば画面を更新
+ *
+ * done は日付ごとの data.days に保存されているため、
+ * 日付が変わったら新しい日の day() を表示することで、
+ * 前日のチェック状態を新しい日に持ち越さない。
+ */
+let observedDateKey = todayKey();
+let midnightTimer = null;
+
+function checkDateRollover(forceRender=false) {
+  const currentKey = todayKey();
+  if (currentKey !== observedDateKey || forceRender) {
+    const changed = currentKey !== observedDateKey;
+    observedDateKey = currentKey;
+
+    // 新しい日のデータを確実に作成（done は空配列で開始）
+    const d = day();
+    if (!Array.isArray(d.done)) d.done = [];
+    if (!Array.isArray(d.logs)) d.logs = [];
+
+    if (changed) save();
+    render();
+    return true;
+  }
+  return false;
+}
+
+function scheduleNextMidnight() {
+  clearTimeout(midnightTimer);
+  const now = new Date();
+  const next = new Date(now);
+  next.setHours(24, 0, 0, 0);
+  midnightTimer = setTimeout(() => {
+    checkDateRollover(true);
+    scheduleNextMidnight();
+  }, Math.max(1000, next.getTime() - now.getTime() + 50));
+}
+
+// タブレットがスリープ／バックグラウンドから戻ったときに日付を確認
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") checkDateRollover();
+});
+window.addEventListener("pageshow", () => checkDateRollover());
+window.addEventListener("focus", () => checkDateRollover());
+
+scheduleNextMidnight();
 
 function day(){const k=todayKey();if(!data.days[k])data.days[k]={done:[]};if(!data.days[k].logs)data.days[k].logs=[];return data.days[k]}
 function save(){localStorage.setItem(KEY,JSON.stringify(data))}
