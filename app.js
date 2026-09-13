@@ -1,4 +1,4 @@
-const APP_VERSION="V34";
+const APP_VERSION="V35";
 const customStyle = document.createElement('style');
 customStyle.textContent = `
 .setting-row{display:grid; grid-template-columns:30px 110px minmax(0,1fr) 58px 70px 34px!important; gap:6px; align-items:center; margin-bottom:8px;}
@@ -348,16 +348,10 @@ function cleanUpOldLayout() {
 function updateBalanceDisplay(bal){
   const safeBal=Math.max(0, Number(bal)||0);
 
-  // 「残りゲーム時間」はゲーム中だけカウントダウン表示。
-  // ゲーム終了後は銀行に残っている時間を再表示する。
-  if(!data.activeSession){
-    const timerEl=document.getElementById("timer");
-    if(timerEl){
-      const totalSec=Math.max(0, Math.round(safeBal*60));
-      const mm=Math.floor(totalSec/60);
-      const ss=totalSec%60;
-      timerEl.textContent=String(mm).padStart(2,"0")+":"+String(ss).padStart(2,"0");
-    }
+  // 「あと〇〇分ゲームできるよ！」を現在の残り時間と常に連動させる。
+  const msgEl=document.getElementById("remainMessage");
+  if(msgEl){
+    msgEl.textContent = `${Math.floor(safeBal)}分ゲームできるよ！`;
   }
 
   // 既存の残高表示処理を安全に更新
@@ -535,14 +529,6 @@ function render(){
  renderWeek();
  renderTimer();
 
-  // V33: restore remaining game time after rendering when no session is active.
-  if(!data.activeSession){
-    const timerEl=document.getElementById("timer");
-    if(timerEl){
-      const totalSec=Math.max(0, Math.round(Math.max(0, Number(balance())||0)*60));
-      timerEl.textContent=String(Math.floor(totalSec/60)).padStart(2,"0")+":"+String(totalSec%60).padStart(2,"0");
-    }
-  }
 }
 
 function showCharacterEffect(clearCount) {
@@ -626,20 +612,20 @@ function renderTimer(){
  if(!s){
   timer.textContent="00:00";
   document.getElementById("timerStatus").textContent="待機中";
-  document.getElementById("timerNote").textContent="「ゲーム開始」を押すと、タブレットを閉じても時間が進みます。";
+  document.getElementById("timerNote").textContent="「ゲーム開始」を押すとゲームプレイ時間を計測します。";
   document.getElementById("startBtn").disabled=false;
   document.getElementById("finishBtn").disabled=true;
   timer.className="timer";
   return;
  }
- const remaining=Math.max(0,s.allowedSec-sessionElapsedSec());
- timer.textContent=timerText(remaining);
+ const elapsed=Math.min(s.allowedSec,sessionElapsedSec());
+ timer.textContent=timerText(elapsed);
  document.getElementById("timerStatus").textContent="ゲーム中";
- document.getElementById("timerNote").textContent=`残り時間は自動で減ります。画面を閉じても止まりません。`;
+ document.getElementById("timerNote").textContent=`ゲームプレイ時間を計測中。残り${Math.max(0,Math.floor((s.allowedSec-sessionElapsedSec())/60))}分`;
  document.getElementById("startBtn").disabled=true;
  document.getElementById("finishBtn").disabled=false;
  timer.className="timer running";
- if(remaining<=0)finishTimer(true);
+ if(elapsed>=s.allowedSec)finishTimer(true);
 }
 
 function markVoiceMilestones(elapsedSec) {
@@ -710,7 +696,7 @@ function startLiveTimer(){
 
     const elapsedSec=sessionElapsedSec();
     const remaining=Math.max(0,data.activeSession.allowedSec-elapsedSec);
-    document.getElementById("timer").textContent=timerText(remaining);
+    document.getElementById("timer").textContent=timerText(Math.min(data.activeSession.allowedSec,elapsedSec));
 
     const bal=balance();
     updateBalanceDisplay(bal);
@@ -890,7 +876,7 @@ function openSettings(){
  document.getElementById("soundVoiceCheck").checked = (localStorage.getItem(KEY+"_voice") !== "false");
  
  const modal=document.getElementById("settingsModal");
- modal.classList.add("show"); modal.setAttribute("aria-hidden","false");
+ modal.classList.add("show"); modal.setAttribute("aria-hidden","false"); document.body.classList.add("settings-open");
 }
 
 document.getElementById("savePasswordBtn").onclick = () => {

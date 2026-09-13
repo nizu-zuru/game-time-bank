@@ -72,3 +72,25 @@
 @keyframes fadeOut {
   to { opacity: 0; transform: scale(1.1); }
 }
+
+/* V35: 保護者設定をモーダル内だけでスクロール */
+html, body { overscroll-behavior: none; }
+body.settings-open { overflow: hidden; position: fixed; width: 100%; }
+.modal { overflow: hidden; overscroll-behavior: contain; }
+.modal-box { max-height: calc(100dvh - 40px); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+
+/* V35: 完了時は緑背景＋白いチェックだけを表示 */
+.task.done .check {
+  border: 0;
+  background: #43a96f;
+  color: transparent;
+  font-size: 0;
+  position: relative;
+}
+.task.done .check::after {
+  content: "✓";
+  color: #fff;
+  font-size: 27px;
+  font-weight: 900;
+  line-height: 1;
+}
