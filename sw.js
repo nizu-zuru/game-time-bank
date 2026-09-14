@@ -1,4 +1,4 @@
-const CACHE="game-time-bank-v36";
+const CACHE="game-time-bank-v37";
 const ASSETS=[
   "./",
   "./index.html",
@@ -30,4 +30,20 @@ const ASSETS=[
 ];
 self.addEventListener("install",e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));
 self.addEventListener("activate",e=>e.waitUntil(self.clients.claim()));
-self.addEventListener("fetch",e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request))));
+self.addEventListener("message",e=>{
+  if(e.data && e.data.type==="SKIP_WAITING") self.skipWaiting();
+});
+
+self.addEventListener("fetch",e=>{
+  const url=new URL(e.request.url);
+  const isCore=url.pathname.endsWith("/index.html") || url.pathname.endsWith("/app.js") || url.pathname.endsWith("/style.css") || url.pathname.endsWith("/sw.js");
+  if(isCore){
+    e.respondWith(fetch(e.request,{cache:"no-store"}).then(response=>{
+      const copy=response.clone();
+      caches.open(CACHE).then(c=>c.put(e.request,copy)).catch(()=>{});
+      return response;
+    }).catch(()=>caches.match(e.request)));
+  }else{
+    e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)));
+  }
+});

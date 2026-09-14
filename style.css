@@ -111,3 +111,24 @@ body.settings-open { overflow: hidden; position: fixed; width: 100%; }
   .balance-unit{font-size:21px;}
   .balance-message{font-size:12px;}
 }
+
+
+/* 保護者設定を開いている間は背景ページを固定し、設定ウィンドウだけをスクロール */
+html.settings-open, body.settings-open{
+  overflow:hidden !important;
+  height:100%;
+  overscroll-behavior:none;
+}
+.modal{
+  overflow:hidden !important;
+  overscroll-behavior:none;
+  touch-action:none;
+}
+.modal-box{
+  max-height:calc(100dvh - 40px);
+  overflow-y:auto !important;
+  overflow-x:hidden;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  touch-action:pan-y;
+}

@@ -1,4 +1,4 @@
-const APP_VERSION="V36";
+const APP_VERSION="V37";
 const customStyle = document.createElement('style');
 customStyle.textContent = `
 .setting-row{display:grid; grid-template-columns:30px 110px minmax(0,1fr) 58px 70px 34px!important; gap:6px; align-items:center; margin-bottom:8px;}
@@ -346,15 +346,20 @@ function cleanUpOldLayout() {
 }
 
 function updateBalanceDisplay(bal){
-  const safeBal=Math.max(0, Number(bal)||0);
+  const safeBal=Math.max(0, Math.floor(Number(bal)||0));
 
-  // 「あと〇〇分ゲームできるよ！」を現在の残り時間と常に連動させる。
-  const msgEl=document.getElementById("remainMessage");
-  if(msgEl){
-    msgEl.textContent = "ゲームできるよ！";
+  // メインの「あと ○○ 分 ゲームできるよ！」の数字を必ず現在残高で更新。
+  const balEl=document.getElementById("balance");
+  if(balEl){
+    balEl.textContent=String(safeBal);
   }
 
-  // 既存の残高表示処理を安全に更新
+  const msgEl=document.getElementById("remainMessage");
+  if(msgEl){
+    msgEl.textContent="ゲームできるよ！";
+  }
+
+  // その他の残高表示も更新
   document.querySelectorAll(".balance-value,[data-balance-display]").forEach(el=>{
     el.textContent=formatBank(safeBal);
   });
@@ -1062,14 +1067,46 @@ document.getElementById("saveSettings").onclick = () => {
   showToast("設定を保存しました");
 };
 
-document.getElementById("forceUpdateBtn").onclick = () => {
-  if(confirm("アプリを最新版に更新しますか？")){
-     if('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function(registrations) {
-           for(let registration of registrations) { registration.unregister(); }
-        });
-     }
-     window.location.reload(true);
+document.getElementById("forceUpdateBtn").onclick = async () => {
+  if(!confirm("アプリを最新版に更新しますか？")) return;
+
+  const btn=document.getElementById("forceUpdateBtn");
+  if(btn){
+    btn.disabled=true;
+    btn.textContent="🔄 更新中…";
+  }
+
+  try {
+    if("serviceWorker" in navigator){
+      // 新しいService Workerを明示的に取得・インストール
+      const registrations=await navigator.serviceWorker.getRegistrations();
+      for(const registration of registrations){
+        try { await registration.update(); } catch(e){ console.log("SW update error:",e); }
+        if(registration.waiting){
+          registration.waiting.postMessage({type:"SKIP_WAITING"});
+        }
+      }
+    }
+
+    // 旧バージョンのアプリキャッシュを削除。これにより古いapp.js/index.htmlを残さない。
+    if("caches" in window){
+      const keys=await caches.keys();
+      await Promise.all(keys
+        .filter(k=>k.startsWith("game-time-bank-"))
+        .map(k=>caches.delete(k)));
+    }
+
+    // URLに更新番号を付けてHTML自体もブラウザキャッシュから外す。
+    const url=new URL(window.location.href);
+    url.searchParams.set("app_update",Date.now().toString());
+    window.location.replace(url.toString());
+  } catch(e) {
+    console.error("最新版への更新に失敗:",e);
+    if(btn){
+      btn.disabled=false;
+      btn.textContent="🔄 アプリを最新版に更新";
+    }
+    alert("更新処理に失敗しました。もう一度お試しください。");
   }
 };
 
