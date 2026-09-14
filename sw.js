@@ -1,4 +1,4 @@
-const CACHE="game-time-bank-v37";
+const CACHE="game-time-bank-v38";
 const ASSETS=[
   "./",
   "./index.html",

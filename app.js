@@ -1,4 +1,4 @@
-const APP_VERSION="V37";
+const APP_VERSION="V38";
 const customStyle = document.createElement('style');
 customStyle.textContent = `
 .setting-row{display:grid; grid-template-columns:30px 110px minmax(0,1fr) 58px 70px 34px!important; gap:6px; align-items:center; margin-bottom:8px;}
@@ -881,7 +881,7 @@ function openSettings(){
  document.getElementById("soundVoiceCheck").checked = (localStorage.getItem(KEY+"_voice") !== "false");
  
  const modal=document.getElementById("settingsModal");
- modal.classList.add("show"); modal.setAttribute("aria-hidden","false"); document.body.classList.add("settings-open");
+ modal.classList.add("show"); modal.setAttribute("aria-hidden","false"); document.body.classList.add("settings-open"); document.documentElement.classList.add("settings-open");
 }
 
 document.getElementById("savePasswordBtn").onclick = () => {
@@ -1034,7 +1034,11 @@ function addSettingRow(t,box){
 }
 
 document.getElementById("closeSettings").onclick=()=>{
- const modal=document.getElementById("settingsModal");modal.classList.remove("show");modal.setAttribute("aria-hidden","true");
+ const modal=document.getElementById("settingsModal");
+ modal.classList.remove("show");
+ modal.setAttribute("aria-hidden","true");
+ document.body.classList.remove("settings-open");
+ document.documentElement.classList.remove("settings-open");
 };
 document.getElementById("addTaskBtn").onclick=()=>{
  addSettingRow({id:"new"+Date.now(),cat:"📝 その他",category:"other",icon:"📝",name:"新しいクエスト",min:5,allowManualCount:false},document.getElementById("settingsTasks"));
@@ -1068,44 +1072,46 @@ document.getElementById("saveSettings").onclick = () => {
 };
 
 document.getElementById("forceUpdateBtn").onclick = async () => {
-  if(!confirm("アプリを最新版に更新しますか？")) return;
-
-  const btn=document.getElementById("forceUpdateBtn");
-  if(btn){
-    btn.disabled=true;
-    btn.textContent="🔄 更新中…";
-  }
+  const btn = document.getElementById("forceUpdateBtn");
+  const oldText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "🔄 更新中…";
 
   try {
-    if("serviceWorker" in navigator){
-      // 新しいService Workerを明示的に取得・インストール
-      const registrations=await navigator.serviceWorker.getRegistrations();
-      for(const registration of registrations){
-        try { await registration.update(); } catch(e){ console.log("SW update error:",e); }
-        if(registration.waiting){
-          registration.waiting.postMessage({type:"SKIP_WAITING"});
+    // ① 現在のService Workerをすべて停止・登録解除
+    //    → 古いSWが最新版HTML/app.jsを返してしまう経路を完全に断つ
+    if ("serviceWorker" in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map(async registration => {
+        try {
+          if (registration.waiting) {
+            registration.waiting.postMessage({type:"SKIP_WAITING"});
+          }
+          await registration.unregister();
+        } catch (e) {
+          console.log("SW unregister error:", e);
         }
-      }
+      }));
     }
 
-    // 旧バージョンのアプリキャッシュを削除。これにより古いapp.js/index.htmlを残さない。
-    if("caches" in window){
-      const keys=await caches.keys();
+    // ② 旧アプリキャッシュをすべて削除
+    if ("caches" in window) {
+      const keys = await caches.keys();
       await Promise.all(keys
-        .filter(k=>k.startsWith("game-time-bank-"))
-        .map(k=>caches.delete(k)));
+        .filter(k => k.startsWith("game-time-bank-"))
+        .map(k => caches.delete(k)));
     }
 
-    // URLに更新番号を付けてHTML自体もブラウザキャッシュから外す。
-    const url=new URL(window.location.href);
-    url.searchParams.set("app_update",Date.now().toString());
+    // ③ ブラウザのページキャッシュも使わないURLで再読み込み
+    //    SWが登録されていない状態なので、Chromeから最新版を直接取得する
+    const url = new URL(window.location.href);
+    url.searchParams.set("app_update", Date.now().toString());
     window.location.replace(url.toString());
-  } catch(e) {
-    console.error("最新版への更新に失敗:",e);
-    if(btn){
-      btn.disabled=false;
-      btn.textContent="🔄 アプリを最新版に更新";
-    }
+
+  } catch (e) {
+    console.error("最新版への更新に失敗:", e);
+    btn.disabled = false;
+    btn.textContent = oldText;
     alert("更新処理に失敗しました。もう一度お試しください。");
   }
 };
@@ -1135,3 +1141,17 @@ document.getElementById("soundVoiceCheck").onchange = (e) => {
 };
 
 render();
+
+// V38: 保護者設定表示中は背面スクロールを完全にロックし、設定ウィンドウだけスクロール
+(function setupSettingsScrollLock() {
+  const modal = document.getElementById("settingsModal");
+  if (!modal) return;
+  const sync = () => {
+    const isOpen = modal.classList.contains("show");
+    document.body.classList.toggle("settings-open", isOpen);
+    document.documentElement.classList.toggle("settings-open", isOpen);
+  };
+  sync();
+  new MutationObserver(sync).observe(modal, { attributes: true, attributeFilter: ["class"] });
+})();
+

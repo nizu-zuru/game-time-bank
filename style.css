@@ -132,3 +132,20 @@ html.settings-open, body.settings-open{
   -webkit-overflow-scrolling:touch;
   touch-action:pan-y;
 }
+
+/* V38: 保護者設定を開いている間は背面（メイン画面）をスクロールさせない */
+body.settings-open {
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+  width: 100% !important;
+}
+#settingsModal {
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+#settingsModal .modal-box {
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
