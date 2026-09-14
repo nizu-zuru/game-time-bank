@@ -94,3 +94,20 @@ body.settings-open { overflow: hidden; position: fixed; width: 100%; }
   font-weight: 900;
   line-height: 1;
 }
+
+
+/* V36: 「あと 80 分 ゲームできるよ！」を1行で分かりやすく表示 */
+.balance-card{display:flex;flex-direction:column;align-items:center;}
+.balance-main-line{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:78px;}
+.balance-prefix{font-size:16px;font-weight:900;white-space:nowrap;}
+.balance-number-wrap{display:flex;align-items:baseline;gap:5px;white-space:nowrap;}
+.balance-number-wrap .balance{font-size:70px;line-height:1;font-weight:900;margin:0;}
+.balance-unit{font-size:24px;font-weight:900;white-space:nowrap;}
+.balance-message{font-size:14px;font-weight:900;white-space:nowrap;}
+@media(max-width:520px){
+  .balance-main-line{gap:7px;min-height:68px;}
+  .balance-prefix{font-size:14px;}
+  .balance-number-wrap .balance{font-size:58px;}
+  .balance-unit{font-size:21px;}
+  .balance-message{font-size:12px;}
+}

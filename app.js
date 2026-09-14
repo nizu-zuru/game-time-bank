@@ -1,4 +1,4 @@
-const APP_VERSION="V35";
+const APP_VERSION="V36";
 const customStyle = document.createElement('style');
 customStyle.textContent = `
 .setting-row{display:grid; grid-template-columns:30px 110px minmax(0,1fr) 58px 70px 34px!important; gap:6px; align-items:center; margin-bottom:8px;}
@@ -351,7 +351,7 @@ function updateBalanceDisplay(bal){
   // 「あと〇〇分ゲームできるよ！」を現在の残り時間と常に連動させる。
   const msgEl=document.getElementById("remainMessage");
   if(msgEl){
-    msgEl.textContent = `${Math.floor(safeBal)}分ゲームできるよ！`;
+    msgEl.textContent = "ゲームできるよ！";
   }
 
   // 既存の残高表示処理を安全に更新

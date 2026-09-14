@@ -28,8 +28,14 @@
 
   <main>
     <section class="balance-card">
-      <div class="balance-title">あと <span id="remainMessage">ゲームできるよ！</span></div>
-      <div class="balance" id="balance">0<span>分</span></div>
+      <div class="balance-main-line">
+        <span class="balance-prefix">あと</span>
+        <div class="balance-number-wrap">
+          <div class="balance" id="balance">0</div>
+          <span class="balance-unit">分</span>
+        </div>
+        <span id="remainMessage" class="balance-message">ゲームできるよ！</span>
+      </div>
       <div class="balance-sub">今日GET <b id="todayEarned">0分</b> ・ 今日使用 <b id="todayUsed">0分</b></div>
     </section>
 
