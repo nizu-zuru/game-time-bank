@@ -1,4 +1,4 @@
-const APP_VERSION="V38";
+const APP_VERSION="V39";
 const customStyle = document.createElement('style');
 customStyle.textContent = `
 .setting-row{display:grid; grid-template-columns:30px 110px minmax(0,1fr) 58px 70px 34px!important; gap:6px; align-items:center; margin-bottom:8px;}
@@ -75,7 +75,10 @@ const VOICE_ASSETS = [
   './sound/voice/nokori10hun.opus',
   './sound/voice/nokori5hun.opus',
   './sound/voice/nokori1hun.opus',
-  './sound/voice/stop.opus',
+  './sound/voice/stop_01.opus',
+  './sound/voice/stop_02.opus',
+  './sound/voice/stop_03.opus',
+  './sound/voice/stop_04.opus',
   './sound/voice/30min_passed.opus',
   './sound/voice/60min_passed.opus',
   './sound/voice/finish.opus'
@@ -738,9 +741,20 @@ function finishTimer(auto=false){
     day().logs.push({start,end,min:useRounded,remain:remainAfter,kind:auto?"タイマー（自動終了）":"タイマー"});
   }
 
-  // Manual "ゲーム終了" uses the requested stop voice.
-  // Automatic exhaustion keeps the existing finish voice.
-  playSound(auto ? './sound/voice/finish.opus' : './sound/voice/stop.opus', 'voice');
+  // 手動の「ゲーム終了」は stop_01～stop_04 からランダムに1つ再生。
+  // 自動終了時は既存の finish.opus を再生。
+  if (auto) {
+    playSound('./sound/voice/finish.opus', 'voice');
+  } else {
+    const stopVoices = [
+      './sound/voice/stop_01.opus',
+      './sound/voice/stop_02.opus',
+      './sound/voice/stop_03.opus',
+      './sound/voice/stop_04.opus'
+    ];
+    const randomStopVoice = stopVoices[Math.floor(Math.random() * stopVoices.length)];
+    playSound(randomStopVoice, 'voice');
+  }
 
   save();clearInterval(timerInterval);timerInterval=null;render();
   document.getElementById("timerNote").textContent=auto?"⏰ ゲーム時間を使い切りました！":"ゲーム終了。おつかれさま！";
